@@ -68,6 +68,10 @@ async def async_setup(hass: HomeAssistant, global_config: ConfigType) -> bool:
         hass, "binary_sensor", DOMAIN, {"coordinator": coordinator}, config
     )
 
+    await async_load_platform(
+        hass, "button", DOMAIN, {"coordinator": coordinator}, config
+    )
+
     async def async_update_data(now):
         await coordinator.async_request_refresh()
 

@@ -65,6 +65,7 @@ class ChargerVoltageSensor(UpsHatESensor):
         self._name = "Charger Voltage"
         self._attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
         self._attr_device_class = SensorDeviceClass.VOLTAGE
+        self._attr_suggested_display_precision = 1
 
     @property
     def native_value(self):
@@ -77,6 +78,7 @@ class ChargerCurrentSensor(UpsHatESensor):
         self._name = "Charger Current"
         self._attr_native_unit_of_measurement = UnitOfElectricCurrent.MILLIAMPERE
         self._attr_device_class = SensorDeviceClass.CURRENT
+        self._attr_suggested_display_precision = 0
 
     @property
     def native_value(self):
@@ -89,6 +91,7 @@ class ChargerPowerSensor(UpsHatESensor):
         self._name = "Charger Power"
         self._attr_native_unit_of_measurement = UnitOfPower.WATT
         self._attr_device_class = SensorDeviceClass.POWER
+        self._attr_suggested_display_precision = 1
 
     @property
     def native_value(self):
@@ -101,6 +104,7 @@ class BatteryVoltageSensor(UpsHatESensor):
         self._name = "Battery Voltage"
         self._attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
         self._attr_device_class = SensorDeviceClass.VOLTAGE
+        self._attr_suggested_display_precision = 1
 
     @property
     def native_value(self):
@@ -113,6 +117,7 @@ class BatteryCurrentSensor(UpsHatESensor):
         self._name = "Battery Current"
         self._attr_native_unit_of_measurement = UnitOfElectricCurrent.MILLIAMPERE
         self._attr_device_class = SensorDeviceClass.CURRENT
+        self._attr_suggested_display_precision = 0
 
     @property
     def native_value(self):
@@ -151,7 +156,7 @@ class RemainingTimeSensor(UpsHatESensor):
         self._name = "Remaining Time"
         self._attr_native_unit_of_measurement = UnitOfTime.MINUTES
         self._attr_device_class = SensorDeviceClass.DURATION
-        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
+        self._attr_state_class = SensorStateClass.TOTAL
         self._attr_suggested_display_precision = 0
 
     @property
@@ -165,6 +170,7 @@ class Cell1VoltageSensor(UpsHatESensor):
         self._name = "Cell1 Voltage"
         self._attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
         self._attr_device_class = SensorDeviceClass.VOLTAGE
+        self._attr_suggested_display_precision = 1
 
     @property
     def native_value(self):
@@ -177,6 +183,7 @@ class Cell2VoltageSensor(UpsHatESensor):
         self._name = "Cell2 Voltage"
         self._attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
         self._attr_device_class = SensorDeviceClass.VOLTAGE
+        self._attr_suggested_display_precision = 1
 
     @property
     def native_value(self):
@@ -189,6 +196,7 @@ class Cell3VoltageSensor(UpsHatESensor):
         self._name = "Cell3 Voltage"
         self._attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
         self._attr_device_class = SensorDeviceClass.VOLTAGE
+        self._attr_suggested_display_precision = 1
 
     @property
     def native_value(self):
@@ -201,6 +209,7 @@ class Cell4VoltageSensor(UpsHatESensor):
         self._name = "Cell4 Voltage"
         self._attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
         self._attr_device_class = SensorDeviceClass.VOLTAGE
+        self._attr_suggested_display_precision = 1
 
     @property
     def native_value(self):
