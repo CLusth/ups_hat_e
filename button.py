@@ -36,7 +36,9 @@ async def async_setup_platform(
 
     coordinator = discovery_info.get("coordinator")
 
-    async_add_entities([ShutdownButton(hass, coordinator)])
+    async_add_entities(
+        ShutdownButton(hass, coordinator)
+    )
 
 class UpsHatEButton(UpsHatEEntity, ButtonEntity):
     """Base button."""

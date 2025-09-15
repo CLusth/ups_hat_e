@@ -6,7 +6,6 @@ DEFAULT_UNIQUE_ID = "ha_pi_ups"
 DEFAULT_NAME = "HA Pi UPS"
 
 CONF_ADDR = "addr"
-CONF_BATTERY_CAPACITY = "battery_capacity"
 CONF_SCAN_INTERVAL = "scan_interval"
 
 

@@ -10,13 +10,14 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import (
     DOMAIN,
     CONF_ADDR,
-    CONF_BATTERY_CAPACITY,
+    CONF_SCAN_INTERVAL,
     REG_REBOOT,
     REG_CHARGING,
     REG_BUSVOLTAGE,
     REG_BATVOLTAGE,
     REG_CELL_1_VOLTAGE,
 )
+
 import smbus2 as smbus
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,7 +34,6 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         except:
             _LOGGER.error(f"ADDR {config.get(CONF_ADDR)} for UPS Hat E is invalid.")
             raise
-        self._battery_capacity = config.get(CONF_BATTERY_CAPACITY)
 
         self.data = {
             "charger_voltage": 0,
@@ -62,6 +62,8 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=DOMAIN,
+            # Polling interval. Will only be polled if there are subscribers.
+            update_interval=config.get(CONF_SCAN_INTERVAL),
         )
 
     async def _async_update_data(self):

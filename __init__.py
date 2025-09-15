@@ -16,7 +16,6 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     CONF_ADDR,
-    CONF_BATTERY_CAPACITY,
     CONF_SCAN_INTERVAL,
     DEFAULT_ADDR,
     DEFAULT_NAME,
@@ -37,7 +36,6 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
                 vol.Optional(CONF_UNIQUE_ID, default=DEFAULT_UNIQUE_ID): cv.string,
                 vol.Optional(CONF_SCAN_INTERVAL, default=20): int,
-                vol.Optional(CONF_BATTERY_CAPACITY, default=4800): cv.positive_int,
             }
         )
     },
@@ -71,10 +69,5 @@ async def async_setup(hass: HomeAssistant, global_config: ConfigType) -> bool:
     await async_load_platform(
         hass, "button", DOMAIN, {"coordinator": coordinator}, config
     )
-
-    async def async_update_data(now):
-        await coordinator.async_request_refresh()
-
-    async_track_time_interval(hass, async_update_data, config.get(CONF_SCAN_INTERVAL))
 
     return True
