@@ -1,11 +1,13 @@
 {
     "domain": "ups_hat_e",
     "name": "Waveshare Pi UPS Hat (E)",
+    "codeowners": ["@Orgjvr","@CLusth"],
     "integration_type": "device",
     "requirements": ["smbus2>=0.4.2"],
+    "dependencies": [],
     "iot_class": "local_polling",
-    "issue_tracker": "https://github.com/orgjvr/ups_hat_e/issues",
-    "documentation": "https://github.com/Orgjvr/ups_hat_e",
+    "issue_tracker": "https://github.com/CLusth/ups_hat_e/issues",
+    "documentation": "https://github.com/CLusth/ups_hat_e",
     "loggers": ["ups_hat_e"],
-    "version": "0.0.2"
+    "version": "0.1.0"
 }
