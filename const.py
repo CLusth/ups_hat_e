@@ -8,6 +8,7 @@ DEFAULT_NAME = "HA Pi UPS"
 CONF_ADDR = "addr"
 CONF_SCAN_INTERVAL = "scan_interval"
 
+SAMPLES = 3
 
 # Registers
 # https://www.waveshare.com/wiki/UPS_HAT_(E)_Register
@@ -26,7 +27,7 @@ REG_REBOOT = 0x01
 
 # BIT5
 # 1: VBUS is powered
-# 0: VBUS is not powered	
+# 0: VBUS is not powered
 
 # BIT4 BIT3
 # Fixed: 00

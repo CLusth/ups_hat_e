@@ -2,23 +2,26 @@
 
 import logging
 
+import smbus2 as smbus
+from collections import deque
+from statistics import mean
+
 from homeassistant import core
 from homeassistant.const import CONF_NAME, CONF_UNIQUE_ID
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
-    DOMAIN,
     CONF_ADDR,
     CONF_SCAN_INTERVAL,
-    REG_REBOOT,
-    REG_CHARGING,
-    REG_BUSVOLTAGE,
+    DOMAIN,
     REG_BATVOLTAGE,
+    REG_BUSVOLTAGE,
     REG_CELL_1_VOLTAGE,
+    REG_CHARGING,
+    REG_REBOOT,
+    SAMPLES,
 )
-
-import smbus2 as smbus
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,6 +59,11 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         self._bus = smbus.SMBus(1)
 
         self._is_online = False
+        self._charger_current_buf = deque(maxlen=SAMPLES)
+        self._charger_voltage_buf = deque(maxlen=SAMPLES)
+        self._charger_power_buf = deque(maxlen=SAMPLES)
+        self._battery_current_buf = deque(maxlen=SAMPLES)
+        self._battery_voltage_buf = deque(maxlen=SAMPLES)
 
         _LOGGER.debug("Call super")
         super().__init__(
@@ -68,31 +76,11 @@ class UpsHatECoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         try:
-            #_LOGGER.info("Updating data")   
-
-            # return {
-            #     "charger_voltage": 0,
-            #     "charger_current": 0,
-            #     "charger_power": 0,
-            #     "battery_voltage": 0,
-            #     "battery_current": 0,
-            #     "soc": 0,
-            #     "remaining_battery_capacity": 0,  # in Wh
-            #     "remaining_time": 0,
-            #     "cell1_voltage": 0,
-            #     "cell2_voltage": 0,
-            #     "cell3_voltage": 0,
-            #     "cell4_voltage": 0,
-            #     "state": "Unknown",
-            #     "online": False,
-            #     "charging": False,
-            # }
-            #_LOGGER.warning(f"Reading data0: {self._addr}")  
-            try: 
+            try:
                 data = self._bus.read_i2c_block_data(self._addr, REG_CHARGING, 0x01)
             except Exception as e:
-                _LOGGER.warning(f"PIHAT Exception: {str(e)}")   
-            #_LOGGER.warning(f"Reading data1: {data}")   
+                _LOGGER.warning(f"PIHAT Exception: {str(e)}")
+
             if(data[0] & 0x40):
                 state = "Fast Charging"
                 _LOGGER.debug("Fast Charging state")
@@ -109,52 +97,61 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             self._is_online = bool(data[0] & 0x20)
 
             data = self._bus.read_i2c_block_data(self._addr, REG_BUSVOLTAGE, 0x06)
-            #_LOGGER.warning(f"Reading data2: {data}")   
-            charger_voltage = (data[0] | data[1] << 8)
-            charger_current = (data[2] | data[3] << 8)
-            charger_power = (data[4] | data[5] << 8)
-            _LOGGER.debug("VBUS Voltage %5dmV"%charger_voltage)   
-            _LOGGER.debug("VBUS Current %5dmA"%charger_current)
-            _LOGGER.debug("VBUS Power   %5dmW"%charger_power)   
+            charger_voltage = int(data[0] | data[1] << 8)
+            self._charger_voltage_buf.append(charger_voltage)
 
-            data = self._bus.read_i2c_block_data(self._addr, REG_BATVOLTAGE, 0x0C)    
-            #_LOGGER.warning(f"Reading data3: {data}")   
-            battery_voltage = (data[0] | data[1] << 8)
-            _LOGGER.debug("Battery Voltage %d mV"%battery_voltage)   
-            battery_current = (data[2] | data[3] << 8)                         
-            if(battery_current > 0x7FFF):                                      
-                battery_current -= 0xFFFF                                         
-            _LOGGER.debug("Battery Current %d mA"%battery_current)                     
+            charger_current = int(data[2] | data[3] << 8)
+            self._charger_current_buf.append(charger_current)
+
+            charger_power = int(data[4] | data[5] << 8)
+            self._charger_power_buf.append(charger_power)
+
+            _LOGGER.debug("VBUS Voltage %5dmV"%charger_voltage)
+            _LOGGER.debug("VBUS Current %5dmA"%charger_current)
+            _LOGGER.debug("VBUS Power   %5dmW"%charger_power)
+
+            data = self._bus.read_i2c_block_data(self._addr, REG_BATVOLTAGE, 0x0C)
+            battery_voltage = int(data[0] | data[1] << 8)
+            self._battery_voltage_buf.append(int(battery_voltage))
+
+            _LOGGER.debug("Battery Voltage %d mV"%battery_voltage)
+            battery_current = (data[2] | data[3] << 8)
+            if(battery_current > 0x7FFF):
+                battery_current -= 0xFFFF
+            self._battery_current_buf.append(int(battery_current))
+            _LOGGER.debug("Battery Current %d mA"%battery_current)
+
             soc = (int(data[4] | data[5] << 8))
-            _LOGGER.debug("Battery Percent %d%%"%soc)      
+            _LOGGER.debug("Battery Percent %d%%"%soc)
+
             remaining_battery_capacity = (data[6] | data[7] << 8)
-            _LOGGER.debug("Remaining Capacity %d mAh"%remaining_battery_capacity)   
-            if(battery_current < 0):                                                   
+            _LOGGER.debug("Remaining Capacity %d mAh"%remaining_battery_capacity)
+
+            if not self._is_online:
                 remaining_time = (data[8] | data[9] << 8)
-                _LOGGER.debug("Run Time To Empty %d min"%remaining_time)     
-            else:                
+                _LOGGER.debug("Run Time To Empty %d min"%remaining_time)
+            else:
                 remaining_time = (data[10] | data[11] << 8)
                 _LOGGER.debug("Average Time To Full %d min"%remaining_time)
 
-            data = self._bus.read_i2c_block_data(self._addr, REG_CELL_1_VOLTAGE, 0x08)       
-            #_LOGGER.warning(f"Reading data4: {data}")   
-            cell1_voltage = (data[0] | data[1] << 8)                                      
-            cell2_voltage = (data[2] | data[3] << 8)                                      
-            cell3_voltage = (data[4] | data[5] << 8)                                      
-            cell4_voltage = (data[6] | data[7] << 8)                                      
-            _LOGGER.debug("Cell Voltage1 %d mV"%cell1_voltage)                                    
-            _LOGGER.debug("Cell Voltage2 %d mV"%cell2_voltage)                                    
-            _LOGGER.debug("Cell Voltage3 %d mV"%cell3_voltage)                                    
-            _LOGGER.debug("Cell Voltage4 %d mV"%cell4_voltage)                                    
+            data = self._bus.read_i2c_block_data(self._addr, REG_CELL_1_VOLTAGE, 0x08)
+            cell1_voltage = (data[0] | data[1] << 8)
+            cell2_voltage = (data[2] | data[3] << 8)
+            cell3_voltage = (data[4] | data[5] << 8)
+            cell4_voltage = (data[6] | data[7] << 8)
+            _LOGGER.debug("Cell Voltage1 %d mV"%cell1_voltage)
+            _LOGGER.debug("Cell Voltage2 %d mV"%cell2_voltage)
+            _LOGGER.debug("Cell Voltage3 %d mV"%cell3_voltage)
+            _LOGGER.debug("Cell Voltage4 %d mV"%cell4_voltage)
 
             charging = bool(state in ["Fast Charging","Charging"])
-            #_LOGGER.warning("UPS_HAT_E DATA 0")                                    
+
             self.data = {
-                "charger_voltage": round(charger_voltage / 1000, 2),
-                "charger_current": round(charger_current, 2),
-                "charger_power": round(charger_power / 1000, 2),
-                "battery_voltage": round(battery_voltage / 1000, 2),
-                "battery_current": round(battery_current, 2),
+                "charger_voltage": round(mean(self._charger_voltage_buf) / 1000, 2),
+                "charger_current": round(mean(self._charger_current_buf), 2),
+                "charger_power": round(mean(self._charger_power_buf) / 1000, 2),
+                "battery_voltage": round(mean(self._battery_voltage_buf) / 1000, 2),
+                "battery_current": round(mean(self._battery_current_buf), 2),
                 "soc": round(soc, 1),
                 "remaining_battery_capacity": round(
                     (remaining_battery_capacity * battery_voltage / 1000) / 1000, 2
@@ -168,12 +165,12 @@ class UpsHatECoordinator(DataUpdateCoordinator):
                 "online": self._is_online,
                 "charging": charging,
             }
-            #_LOGGER.warning("UPS_HAT_E DATA 1")                                    
-            _LOGGER.debug(f"UPS_HAT_E DATA 2: {self.data}")                                    
+            #_LOGGER.warning("UPS_HAT_E DATA 1")
+            _LOGGER.debug(f"UPS_HAT_E DATA 2: {self.data}")
             return self.data
         except Exception as e:
             raise UpdateFailed(f"Error updating data: {e}")
-    
+
     def _writeByte(self, register, data):
         temp = [0]
         temp[0] = data & 0xFF
