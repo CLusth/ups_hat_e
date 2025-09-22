@@ -54,11 +54,14 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             "state": "Unknown",
             "online": False,
             "charging": False,
+            "fast_charging": False,
         }
         _LOGGER.debug("Assign SMBUS")
         self._bus = smbus.SMBus(1)
 
         self._is_online = False
+        self._is_charging = False
+        self._is_fast_charging = False
         self._charger_current_buf = deque(maxlen=SAMPLES)
         self._charger_voltage_buf = deque(maxlen=SAMPLES)
         self._charger_power_buf = deque(maxlen=SAMPLES)
@@ -81,29 +84,19 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             except Exception as e:
                 _LOGGER.warning(f"PIHAT Exception: {str(e)}")
 
-            if(data[0] & 0x40):
-                state = "Fast Charging"
-                _LOGGER.debug("Fast Charging state")
-            elif(data[0] & 0x80):
-                state = "Charging"
-                _LOGGER.debug("Charging state")
-            elif(data[0] & 0x20):
-                state = "Discharging"
-                _LOGGER.debug("Discharge state")
-            else:
-                state = "Idle"
-                _LOGGER.debug("Idle state")
-
             self._is_online = bool(data[0] & 0x20)
+            self._is_fast_charging = bool(data[0] & 0x40)
+            self._is_charging = bool(data[0] & 0x80)
 
             data = self._bus.read_i2c_block_data(self._addr, REG_BUSVOLTAGE, 0x06)
-            charger_voltage = int(data[0] | data[1] << 8)
+            charger_voltage = int.from_bytes(data[0:2], "little", signed=True)
+
             self._charger_voltage_buf.append(charger_voltage)
 
-            charger_current = int(data[2] | data[3] << 8)
+            charger_current = int.from_bytes(data[2:4], "little", signed=True)
             self._charger_current_buf.append(charger_current)
 
-            charger_power = int(data[4] | data[5] << 8)
+            charger_power = int.from_bytes(data[4:6], "little", signed=True)
             self._charger_power_buf.append(charger_power)
 
             _LOGGER.debug("VBUS Voltage %5dmV"%charger_voltage)
@@ -111,40 +104,42 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             _LOGGER.debug("VBUS Power   %5dmW"%charger_power)
 
             data = self._bus.read_i2c_block_data(self._addr, REG_BATVOLTAGE, 0x0C)
-            battery_voltage = int(data[0] | data[1] << 8)
+            battery_voltage = int.from_bytes(data[0:2], "little", signed=True)
             self._battery_voltage_buf.append(int(battery_voltage))
-
             _LOGGER.debug("Battery Voltage %d mV"%battery_voltage)
-            battery_current = (data[2] | data[3] << 8)
-            if(battery_current > 0x7FFF):
-                battery_current -= 0xFFFF
-            self._battery_current_buf.append(int(battery_current))
-            _LOGGER.debug("Battery Current %d mA"%battery_current)
 
-            soc = (int(data[4] | data[5] << 8))
+            battery_current = int.from_bytes(data[2:4], "little", signed=True)
+            self._battery_current_buf.append(int(battery_current))
+            _LOGGER.debug("Battery Current1 %d mA"%battery_current)
+
+            soc = int.from_bytes(data[4:6], "little", signed=True)
             _LOGGER.debug("Battery Percent %d%%"%soc)
 
-            remaining_battery_capacity = (data[6] | data[7] << 8)
+            remaining_battery_capacity = int.from_bytes(data[6:8], "little", signed=True)
             _LOGGER.debug("Remaining Capacity %d mAh"%remaining_battery_capacity)
 
             if not self._is_online:
-                remaining_time = (data[8] | data[9] << 8)
-                _LOGGER.debug("Run Time To Empty %d min"%remaining_time)
+                # If there is no power read these registers
+                remaining_time = int.from_bytes(data[8:10], "little", signed=True)
+                _LOGGER.debug("Time To Empty %d min"%remaining_time)
             else:
-                remaining_time = (data[10] | data[11] << 8)
-                _LOGGER.debug("Average Time To Full %d min"%remaining_time)
+                # ... when charging read other registers
+                if (battery_current > 0):
+                    remaining_time = int.from_bytes(data[10:12], "little", signed=True)
+                else:
+                    # Avoid intrepeting 0xFFFF as a number
+                    remaining_time = 0
+                _LOGGER.debug("Time To Full %d min"%remaining_time)
 
             data = self._bus.read_i2c_block_data(self._addr, REG_CELL_1_VOLTAGE, 0x08)
-            cell1_voltage = (data[0] | data[1] << 8)
-            cell2_voltage = (data[2] | data[3] << 8)
-            cell3_voltage = (data[4] | data[5] << 8)
-            cell4_voltage = (data[6] | data[7] << 8)
+            cell1_voltage = int.from_bytes(data[0:2], "little", signed=True)
+            cell2_voltage = int.from_bytes(data[2:4], "little", signed=True)
+            cell3_voltage = int.from_bytes(data[4:6], "little", signed=True)
+            cell4_voltage = int.from_bytes(data[6:8], "little", signed=True)
             _LOGGER.debug("Cell Voltage1 %d mV"%cell1_voltage)
             _LOGGER.debug("Cell Voltage2 %d mV"%cell2_voltage)
             _LOGGER.debug("Cell Voltage3 %d mV"%cell3_voltage)
             _LOGGER.debug("Cell Voltage4 %d mV"%cell4_voltage)
-
-            charging = bool(state in ["Fast Charging","Charging"])
 
             self.data = {
                 "charger_voltage": round(mean(self._charger_voltage_buf) / 1000, 2),
@@ -161,11 +156,11 @@ class UpsHatECoordinator(DataUpdateCoordinator):
                 "cell2_voltage": cell2_voltage / 1000,
                 "cell3_voltage": cell3_voltage / 1000,
                 "cell4_voltage": cell4_voltage / 1000,
-                "state": state,
                 "online": self._is_online,
-                "charging": charging,
+                "charging": self._is_charging,
+                "fast_charging": self._is_fast_charging,
             }
-            #_LOGGER.warning("UPS_HAT_E DATA 1")
+
             _LOGGER.debug(f"UPS_HAT_E DATA 2: {self.data}")
             return self.data
         except Exception as e:

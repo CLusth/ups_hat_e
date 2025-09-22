@@ -30,6 +30,7 @@ async def async_setup_platform(
     sensors = [
         OnlineBinarySensor(coordinator),
         ChargingBinarySensor(coordinator),
+        FastChargingBinarySensor(coordinator),
     ]
 
     async_add_entities(sensors)
@@ -66,3 +67,16 @@ class ChargingBinarySensor(UpsHatEBinarySensor):
     @property
     def is_on(self):
         return self._coordinator.data["charging"]
+
+
+class FastChargingBinarySensor(UpsHatEBinarySensor):
+    """Fast charging binary sensor."""
+
+    def __init__(self, coordinator) -> None:
+        super().__init__(coordinator)
+        self._name = "Fast Charging"
+        self._attr_device_class = BinarySensorDeviceClass.BATTERY_CHARGING
+
+    @property
+    def is_on(self):
+        return self._coordinator.data["fast_charging"]
