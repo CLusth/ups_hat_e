@@ -214,5 +214,3 @@ class Cell4VoltageSensor(UpsHatESensor):
     @property
     def native_value(self):
         return self._coordinator.data["cell4_voltage"]
-
-

@@ -63,6 +63,9 @@ REG_REM_BAT_TIME = 0x28
 # Cell 1 Voltage Register
 REG_CELL_1_VOLTAGE = 0x30
 
+# Value to write when triger shutdown
+CONST_SHUTDOWN_CMD = 0x55
+
 ATTR_CAPACITY = "capacity"
 ATTR_SOC = "soc"
 ATTR_PSU_VOLTAGE = "psu_voltage"

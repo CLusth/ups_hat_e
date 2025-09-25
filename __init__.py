@@ -35,7 +35,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_ADDR, default=DEFAULT_ADDR): cv.string,
                 vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
                 vol.Optional(CONF_UNIQUE_ID, default=DEFAULT_UNIQUE_ID): cv.string,
-                vol.Optional(CONF_SCAN_INTERVAL, default=20): int,
+                vol.Optional(CONF_SCAN_INTERVAL, default=30): int,
             }
         )
     },
@@ -56,7 +56,7 @@ async def async_setup(hass: HomeAssistant, global_config: ConfigType) -> bool:
     config[CONF_SCAN_INTERVAL] = timedelta(seconds=config[CONF_SCAN_INTERVAL])
 
     coordinator = UpsHatECoordinator(hass, config)
-    await coordinator.async_refresh()
+    await coordinator.async_config_entry_first_refresh()
 
     await async_load_platform(
         hass, "sensor", DOMAIN, {"coordinator": coordinator}, config

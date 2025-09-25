@@ -1,12 +1,14 @@
 """UPS Hat E entity."""
 
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.core import callback
 
 from .const import DOMAIN
 from .coordinator import UpsHatECoordinator
 
 
-class UpsHatEEntity:
+class UpsHatEEntity(CoordinatorEntity):
     """UPS Hat E entity."""
 
     def __init__(self, coordinator: UpsHatECoordinator) -> None:
@@ -17,6 +19,9 @@ class UpsHatEEntity:
             name=coordinator.name_prefix,
             manufacturer="Waveshare Pi UPS Hat E",
         )
+        
+        """Pass coordinator to CoordinatorEntity."""
+        super().__init__(coordinator)
 
     @property
     def name(self):
@@ -26,5 +31,7 @@ class UpsHatEEntity:
     def unique_id(self):
         return self._coordinator.id_prefix + "_" + self._name
 
-    async def async_update(self):
-        await self._coordinator.async_request_refresh()
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        self.async_write_ha_state()

@@ -4,7 +4,7 @@ import logging
 
 import smbus2 as smbus
 from collections import deque
-from statistics import mean
+from statistics import median
 
 from homeassistant import core
 from homeassistant.const import CONF_NAME, CONF_UNIQUE_ID
@@ -20,6 +20,7 @@ from .const import (
     REG_CELL_1_VOLTAGE,
     REG_CHARGING,
     REG_REBOOT,
+    CONST_SHUTDOWN_CMD,
     SAMPLES,
 )
 
@@ -51,13 +52,10 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             "cell2_voltage": 0,
             "cell3_voltage": 0,
             "cell4_voltage": 0,
-            "state": "Unknown",
             "online": False,
             "charging": False,
             "fast_charging": False,
         }
-        _LOGGER.debug("Assign SMBUS")
-        self._bus = smbus.SMBus(1)
 
         self._is_online = False
         self._is_charging = False
@@ -67,15 +65,25 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         self._charger_power_buf = deque(maxlen=SAMPLES)
         self._battery_current_buf = deque(maxlen=SAMPLES)
         self._battery_voltage_buf = deque(maxlen=SAMPLES)
+        self._remaining_time_buf = deque(maxlen=SAMPLES)
 
         _LOGGER.debug("Call super")
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
-            # Polling interval. Will only be polled if there are subscribers.
             update_interval=config.get(CONF_SCAN_INTERVAL),
+            always_update=True
         )
+
+    async def _async_setup(self):
+        """Set up the coordinator
+        
+        This method will be called automatically during
+        coordinator.async_config_entry_first_refresh.
+        """
+        _LOGGER.debug("Assign SMBUS")
+        self._bus = smbus.SMBus(1)
 
     async def _async_update_data(self):
         try:
@@ -130,6 +138,9 @@ class UpsHatECoordinator(DataUpdateCoordinator):
                     # Avoid intrepeting 0xFFFF as a number
                     remaining_time = 0
                 _LOGGER.debug("Time To Full %d min"%remaining_time)
+            
+            # Simplistic solution where both types of values go to the same buffer
+            self._remaining_time_buf.append(remaining_time)
 
             data = self._bus.read_i2c_block_data(self._addr, REG_CELL_1_VOLTAGE, 0x08)
             cell1_voltage = int.from_bytes(data[0:2], "little", signed=True)
@@ -142,16 +153,16 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             _LOGGER.debug("Cell Voltage4 %d mV"%cell4_voltage)
 
             self.data = {
-                "charger_voltage": round(mean(self._charger_voltage_buf) / 1000, 2),
-                "charger_current": round(mean(self._charger_current_buf), 2),
-                "charger_power": round(mean(self._charger_power_buf) / 1000, 2),
-                "battery_voltage": round(mean(self._battery_voltage_buf) / 1000, 2),
-                "battery_current": round(mean(self._battery_current_buf), 2),
+                "charger_voltage": round(median(self._charger_voltage_buf) / 1000, 2),
+                "charger_current": round(median(self._charger_current_buf), 2),
+                "charger_power": round(median(self._charger_power_buf) / 1000, 2),
+                "battery_voltage": round(median(self._battery_voltage_buf) / 1000, 2),
+                "battery_current": round(median(self._battery_current_buf), 2),
                 "soc": round(soc, 1),
                 "remaining_battery_capacity": round(
                     (remaining_battery_capacity * battery_voltage / 1000) / 1000, 2
                 ),  # in Wh
-                "remaining_time": remaining_time,
+                "remaining_time": round(median(self._remaining_time_buf)),
                 "cell1_voltage": cell1_voltage / 1000,
                 "cell2_voltage": cell2_voltage / 1000,
                 "cell3_voltage": cell3_voltage / 1000,
@@ -174,4 +185,4 @@ class UpsHatECoordinator(DataUpdateCoordinator):
     async def shutdown(self):
         # Only allow shutdown if not plugged id
         if not self._is_online:
-            self._writeByte(REG_REBOOT, 0x55)
+            self._writeByte(REG_REBOOT, CONST_SHUTDOWN_CMD)
