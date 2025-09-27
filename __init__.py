@@ -1,4 +1,4 @@
-"""Waveshare Pi UPS Hat (E)"""
+"""Waveshare Pi UPS Hat (E)."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from homeassistant.const import CONF_NAME, CONF_UNIQUE_ID, Platform
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
-from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
@@ -56,7 +55,7 @@ async def async_setup(hass: HomeAssistant, global_config: ConfigType) -> bool:
     config[CONF_SCAN_INTERVAL] = timedelta(seconds=config[CONF_SCAN_INTERVAL])
 
     coordinator = UpsHatECoordinator(hass, config)
-    await coordinator.async_config_entry_first_refresh()
+    await coordinator.async_request_refresh()
 
     await async_load_platform(
         hass, "sensor", DOMAIN, {"coordinator": coordinator}, config

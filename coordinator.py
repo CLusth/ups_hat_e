@@ -1,10 +1,10 @@
 """UPS Hat E coordinator."""
 
 import logging
-
-import smbus2 as smbus
 from collections import deque
 from statistics import median
+
+import smbus2 as smbus
 
 from homeassistant import core
 from homeassistant.const import CONF_NAME, CONF_UNIQUE_ID
@@ -28,9 +28,15 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class UpsHatECoordinator(DataUpdateCoordinator):
+    """Coordinator for UPS Hat E integration.
+
+    Handles periodic data updates from the UPS Hat E device,
+    manages state buffers, and provides methods for device control.
+    """
+
     def __init__(self, hass: core.HomeAssistant, config: ConfigType) -> None:
         """Initialize coordinator."""
-        _LOGGER.debug("Initialize coordinator.")
+        _LOGGER.debug("Initialize coordinator")
         self.name_prefix = config.get(CONF_NAME)
         self.id_prefix = config.get(CONF_UNIQUE_ID)
         try:
@@ -67,23 +73,17 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         self._battery_voltage_buf = deque(maxlen=SAMPLES)
         self._remaining_time_buf = deque(maxlen=SAMPLES)
 
+        _LOGGER.debug("Assign SMBUS")
+        self._bus = smbus.SMBus(1)
+
         _LOGGER.debug("Call super")
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
             update_interval=config.get(CONF_SCAN_INTERVAL),
-            always_update=True
+            always_update=True,
         )
-
-    async def _async_setup(self):
-        """Set up the coordinator
-        
-        This method will be called automatically during
-        coordinator.async_config_entry_first_refresh.
-        """
-        _LOGGER.debug("Assign SMBUS")
-        self._bus = smbus.SMBus(1)
 
     async def _async_update_data(self):
         try:
@@ -107,38 +107,40 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             charger_power = int.from_bytes(data[4:6], "little", signed=True)
             self._charger_power_buf.append(charger_power)
 
-            _LOGGER.debug("VBUS Voltage %5dmV"%charger_voltage)
-            _LOGGER.debug("VBUS Current %5dmA"%charger_current)
-            _LOGGER.debug("VBUS Power   %5dmW"%charger_power)
+            _LOGGER.debug("VBUS Voltage %5dmV", charger_voltage)
+            _LOGGER.debug("VBUS Current %5dmA", charger_current)
+            _LOGGER.debug("VBUS Power   %5dmW", charger_power)
 
             data = self._bus.read_i2c_block_data(self._addr, REG_BATVOLTAGE, 0x0C)
             battery_voltage = int.from_bytes(data[0:2], "little", signed=True)
             self._battery_voltage_buf.append(int(battery_voltage))
-            _LOGGER.debug("Battery Voltage %d mV"%battery_voltage)
+            _LOGGER.debug("Battery Voltage %d mV", battery_voltage)
 
             battery_current = int.from_bytes(data[2:4], "little", signed=True)
             self._battery_current_buf.append(int(battery_current))
-            _LOGGER.debug("Battery Current1 %d mA"%battery_current)
+            _LOGGER.debug("Battery Current1 %d mA", battery_current)
 
             soc = int.from_bytes(data[4:6], "little", signed=True)
-            _LOGGER.debug("Battery Percent %d%%"%soc)
+            _LOGGER.debug("Battery Percent %d%%", soc)
 
-            remaining_battery_capacity = int.from_bytes(data[6:8], "little", signed=True)
-            _LOGGER.debug("Remaining Capacity %d mAh"%remaining_battery_capacity)
+            remaining_battery_capacity = int.from_bytes(
+                data[6:8], "little", signed=True
+            )
+            _LOGGER.debug("Remaining Capacity %d mAh", remaining_battery_capacity)
 
             if not self._is_online:
                 # If there is no power read these registers
                 remaining_time = int.from_bytes(data[8:10], "little", signed=True)
-                _LOGGER.debug("Time To Empty %d min"%remaining_time)
+                _LOGGER.debug("Time To Empty %d min", remaining_time)
             else:
                 # ... when charging read other registers
-                if (battery_current > 0):
+                if battery_current > 0:
                     remaining_time = int.from_bytes(data[10:12], "little", signed=True)
                 else:
                     # Avoid intrepeting 0xFFFF as a number
                     remaining_time = 0
-                _LOGGER.debug("Time To Full %d min"%remaining_time)
-            
+                _LOGGER.debug("Time To Full %d min", remaining_time)
+
             # Simplistic solution where both types of values go to the same buffer
             self._remaining_time_buf.append(remaining_time)
 
@@ -147,10 +149,10 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             cell2_voltage = int.from_bytes(data[2:4], "little", signed=True)
             cell3_voltage = int.from_bytes(data[4:6], "little", signed=True)
             cell4_voltage = int.from_bytes(data[6:8], "little", signed=True)
-            _LOGGER.debug("Cell Voltage1 %d mV"%cell1_voltage)
-            _LOGGER.debug("Cell Voltage2 %d mV"%cell2_voltage)
-            _LOGGER.debug("Cell Voltage3 %d mV"%cell3_voltage)
-            _LOGGER.debug("Cell Voltage4 %d mV"%cell4_voltage)
+            _LOGGER.debug("Cell Voltage1 %d mV", cell1_voltage)
+            _LOGGER.debug("Cell Voltage2 %d mV", cell2_voltage)
+            _LOGGER.debug("Cell Voltage3 %d mV", cell3_voltage)
+            _LOGGER.debug("Cell Voltage4 %d mV", cell4_voltage)
 
             self.data = {
                 "charger_voltage": round(median(self._charger_voltage_buf) / 1000, 2),
@@ -183,6 +185,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         self._bus.write_i2c_block_data(self._addr, register, temp)
 
     async def shutdown(self):
+        """Shut down the UPS Hat E device if not plugged in."""
         # Only allow shutdown if not plugged id
         if not self._is_online:
             self._writeByte(REG_REBOOT, CONST_SHUTDOWN_CMD)

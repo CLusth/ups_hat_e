@@ -10,7 +10,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
-from .coordinator import UpsHatECoordinator
 from .entity import UpsHatEEntity
 
 
@@ -36,47 +35,46 @@ async def async_setup_platform(
     async_add_entities(sensors)
 
 
-class UpsHatEBinarySensor(UpsHatEEntity, BinarySensorEntity):
-    """Base binary sensor."""
-
-    def __init__(self, coordinator: UpsHatECoordinator) -> None:
-        super().__init__(coordinator)
-
-
-class OnlineBinarySensor(UpsHatEBinarySensor):
+class OnlineBinarySensor(UpsHatEEntity, BinarySensorEntity):
     """Online binary sensor."""
 
     def __init__(self, coordinator) -> None:
+        """Initialize the online binary sensor."""
         super().__init__(coordinator)
         self._name = "Online"
         self._attr_device_class = BinarySensorDeviceClass.PLUG
 
     @property
     def is_on(self):
+        """Return True if the UPS Hat E is connected to power."""
         return self._coordinator.data["online"]
 
 
-class ChargingBinarySensor(UpsHatEBinarySensor):
+class ChargingBinarySensor(UpsHatEEntity, BinarySensorEntity):
     """Charging binary sensor."""
 
     def __init__(self, coordinator) -> None:
+        """Initialize the charging binary sensor."""
         super().__init__(coordinator)
         self._name = "Charging"
         self._attr_device_class = BinarySensorDeviceClass.BATTERY_CHARGING
 
     @property
     def is_on(self):
+        """Return True if the UPS Hat E is charging."""
         return self._coordinator.data["charging"]
 
 
-class FastChargingBinarySensor(UpsHatEBinarySensor):
+class FastChargingBinarySensor(UpsHatEEntity, BinarySensorEntity):
     """Fast charging binary sensor."""
 
     def __init__(self, coordinator) -> None:
+        """Initialize the fast charging binary sensor."""
         super().__init__(coordinator)
         self._name = "Fast Charging"
         self._attr_device_class = BinarySensorDeviceClass.BATTERY_CHARGING
 
     @property
     def is_on(self):
+        """Return True if the UPS Hat E is fast charging."""
         return self._coordinator.data["fast_charging"]
