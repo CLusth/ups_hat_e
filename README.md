@@ -5,6 +5,18 @@ for this device.
 
 _Note: This is for the (E) version only._
 
+![UPS HAT (E) for Raspberry](docs/UPS-HAT-E-details-1.jpg)
+
+## Installation
+
+The integration can be installed using [HACS](https://hacs.xyz/). The integrations is not
+available in the default repositories, so you will need to add the URL of this repository
+as a custom repository to HACS (see [here](https://hacs.xyz/docs/faq/custom_repositories)).
+
+Alternatively you can use the button below.
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=CLusth&repository=ups_hat_e&category=Integration)
+
 ## Instructions
 
 ### configuration.yaml
@@ -49,5 +61,5 @@ Simple automation that trigger shutdown before the batttery is running out.
 
 ## Aknowledgents
 
-Many thanks to [@Orgjvr](https://github.com/Orgjvr) who write the original
+Many thanks to [@Orgjvr](https://github.com/Orgjvr) who wrote the original
 [ups_hat_e](https://github.com/Orgjvr/ups_hat_e) integration which this is based on.

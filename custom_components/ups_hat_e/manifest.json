@@ -9,5 +9,5 @@
     "issue_tracker": "https://github.com/CLusth/ups_hat_e/issues",
     "documentation": "https://github.com/CLusth/ups_hat_e",
     "loggers": ["ups_hat_e"],
-    "version": "0.1.0"
+    "version": "1.0.0"
 }
