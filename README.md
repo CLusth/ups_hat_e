@@ -5,7 +5,7 @@ for this device.
 
 _Note: This is for the (E) version only._
 
-![UPS HAT (E) for Raspberry](docs/UPS-HAT-E-details-1.jpg)
+![UPS HAT (E) for Raspberry](UPS-HAT-E-details-1.jpg)
 
 ## Installation
 
@@ -13,7 +13,7 @@ The integration can be installed using [HACS](https://hacs.xyz/). The integratio
 available in the default repositories, so you will need to add the URL of this repository
 as a custom repository to HACS (see [here](https://hacs.xyz/docs/faq/custom_repositories)).
 
-Alternatively you can use the button below.
+Alternatively you can use the button below:
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=CLusth&repository=ups_hat_e&category=Integration)
 
