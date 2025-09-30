@@ -1,5 +1,5 @@
 {
-    "domain": "ups_hat_e",
+    "domain": "waveshare_ups_hat",
     "name": "Waveshare Pi UPS Hat (E)",
     "codeowners": ["@Orgjvr","@CLusth"],
     "dependencies": [],
@@ -9,5 +9,5 @@
     "issue_tracker": "https://github.com/CLusth/ups_hat_e/issues",
     "loggers": ["ups_hat_e"],
     "requirements": ["smbus2>=0.4.2"],
-    "version": "1.0.1"
+    "version": "1.0.2"
 }

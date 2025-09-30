@@ -1,6 +1,6 @@
 """Constants."""
 
-DOMAIN = "ups_hat_e"
+DOMAIN = "waveshare_ups_hat"
 DEFAULT_ADDR = "0x2d"
 DEFAULT_UNIQUE_ID = "ha_pi_ups"
 DEFAULT_NAME = "HA Pi UPS"
