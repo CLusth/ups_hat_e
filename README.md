@@ -5,7 +5,7 @@ for this device.
 
 _Note: This is for the (E) version only._
 
-![UPS HAT (E) for Raspberry](UPS-HAT-E-details-1.jpg)
+![UPS HAT (E) for Raspberry](https://github.com/CLusth/ups_hat_e/blob/master/images/UPS-HAT-E-details-1.jpg?raw=true)
 
 ## Installation
 
