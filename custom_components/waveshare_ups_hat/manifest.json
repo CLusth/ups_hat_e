@@ -9,5 +9,5 @@
     "issue_tracker": "https://github.com/CLusth/ups_hat_e/issues",
     "loggers": ["ups_hat_e"],
     "requirements": ["smbus2>=0.4.2"],
-    "version": "1.0.2"
+    "version": "1.0.3"
 }

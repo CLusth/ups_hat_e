@@ -22,11 +22,11 @@ Alternatively you can use the button below:
 ### configuration.yaml
 
    ```
-   ups_hat_e:
+   waveshare_ups_hat:
      addr: 0x2d                # Optional, default 0x2d
-     name: UPS                 # Optional, default HA Pi UPS
-     unique_id: ups_hat_e      # Optional, default ha_pi_ups
-     scan_interval: 60         # Optional, default 30 seconds
+     name: UPS HAT E           # Optional, default UPS HAT E
+     unique_id: ups_hat_e      # Optional, default ups_hat_e
+     scan_interval: 30         # Optional, default 30 seconds
    ```
 
 ### Example automation
