@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import (
     CONF_ADDR,
     CONF_SCAN_INTERVAL,
+    CONF_USE_MOCK,
     DOMAIN,
     REG_BATVOLTAGE,
     REG_BUSVOLTAGE,
@@ -74,7 +75,12 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         self._remaining_time_buf = deque(maxlen=SAMPLES)
 
         _LOGGER.debug("Assign SMBUS")
-        self._bus = smbus.SMBus(1)
+        if not config.get(CONF_USE_MOCK):
+            _LOGGER.debug("Assign SMBUS")
+            self._bus = smbus.SMBus(1)
+        else:
+            _LOGGER.debug("Dont assign SMBUS, since its a mock")
+            self._bus = None
 
         _LOGGER.debug("Call super")
         super().__init__(

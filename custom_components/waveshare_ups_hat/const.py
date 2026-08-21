@@ -7,6 +7,7 @@ DEFAULT_NAME = "UPS HAT E"
 
 CONF_ADDR = "addr"
 CONF_SCAN_INTERVAL = "scan_interval"
+CONF_USE_MOCK = "use_mock"
 
 SAMPLES = 3
 

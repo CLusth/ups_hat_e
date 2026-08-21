@@ -16,6 +16,7 @@ from homeassistant.helpers.typing import ConfigType
 from .const import (
     CONF_ADDR,
     CONF_SCAN_INTERVAL,
+    CONF_USE_MOCK,
     DEFAULT_ADDR,
     DEFAULT_NAME,
     DEFAULT_UNIQUE_ID,
@@ -35,6 +36,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
                 vol.Optional(CONF_UNIQUE_ID, default=DEFAULT_UNIQUE_ID): cv.string,
                 vol.Optional(CONF_SCAN_INTERVAL, default=30): int,
+                vol.Optional(CONF_USE_MOCK, default=False): bool,
             }
         )
     },
@@ -53,6 +55,7 @@ async def async_setup(hass: HomeAssistant, global_config: ConfigType) -> bool:
     if CONF_SCAN_INTERVAL not in config:
         return False
     config[CONF_SCAN_INTERVAL] = timedelta(seconds=config[CONF_SCAN_INTERVAL])
+    config[CONF_USE_MOCK] = bool(config.get(CONF_USE_MOCK))
 
     coordinator = UpsHatECoordinator(hass, config)
     await coordinator.async_request_refresh()
