@@ -15,11 +15,12 @@ class UpsHatEEntity(CoordinatorEntity):
         """Initialize a UPS Hat E entity."""
         self._coordinator = coordinator
         self._device_id = self._coordinator.id_prefix
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.id_prefix)},
-            name=coordinator.name_prefix,
-            manufacturer="Waveshare Pi UPS Hat E",
-        )
+        if coordinator.config_entry is not None:
+            self._attr_device_info = DeviceInfo(
+                identifiers={(DOMAIN, coordinator.id_prefix)},
+                name=coordinator.name_prefix,
+                manufacturer="Waveshare Pi UPS Hat E",
+            )
 
         """Pass coordinator to CoordinatorEntity."""
         super().__init__(coordinator)

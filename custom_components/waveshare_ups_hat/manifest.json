@@ -3,6 +3,7 @@
     "name": "Waveshare Pi UPS Hat (E)",
     "codeowners": ["@Orgjvr","@CLusth"],
     "dependencies": [],
+    "config_flow": true,
     "documentation": "https://github.com/CLusth/ups_hat_e",
     "integration_type": "device",
     "iot_class": "local_polling",

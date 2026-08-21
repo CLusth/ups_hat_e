@@ -7,6 +7,7 @@ from statistics import median
 import smbus2 as smbus
 
 from homeassistant import core
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, CONF_UNIQUE_ID
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -35,13 +36,18 @@ class UpsHatECoordinator(DataUpdateCoordinator):
     manages state buffers, and provides methods for device control.
     """
 
-    def __init__(self, hass: core.HomeAssistant, config: ConfigType) -> None:
+    def __init__(
+        self,
+        hass: core.HomeAssistant,
+        config: ConfigType,
+        config_entry: ConfigEntry | None = None,
+    ) -> None:
         """Initialize coordinator."""
         _LOGGER.debug("Initialize coordinator")
         self.name_prefix = config.get(CONF_NAME)
         self.id_prefix = config.get(CONF_UNIQUE_ID)
         try:
-            self._addr = int(config.get(CONF_ADDR))
+            self._addr = int(str(config.get(CONF_ADDR)).strip(), 0)
         except:
             _LOGGER.error(f"ADDR {config.get(CONF_ADDR)} for UPS Hat E is invalid.")
             raise
@@ -89,6 +95,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             name=DOMAIN,
             update_interval=config.get(CONF_SCAN_INTERVAL),
             always_update=True,
+            config_entry=config_entry,
         )
 
     async def _async_update_data(self):
