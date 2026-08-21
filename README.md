@@ -19,15 +19,9 @@ Alternatively you can use the button below:
 
 ## Instructions
 
-### configuration.yaml
-
-   ```
-   waveshare_ups_hat:
-     addr: 0x2d                # Optional, default 0x2d
-     name: UPS HAT E           # Optional, default UPS HAT E
-     unique_id: ups_hat_e      # Optional, default ups_hat_e
-     scan_interval: 30         # Optional, default 30 seconds
-   ```
+Add the integration through **Settings -> Devices & services -> Add integration**
+and search for **Waveshare Pi UPS Hat (E)**. Enter the I2C address, device name,
+unique ID, and scan interval in the setup form.
 
 ### Example automation
 
