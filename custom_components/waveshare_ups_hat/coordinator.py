@@ -15,7 +15,6 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import (
     CONF_ADDR,
     CONF_SCAN_INTERVAL,
-    CONF_USE_MOCK,
     DOMAIN,
     REG_BATVOLTAGE,
     REG_BUSVOLTAGE,
@@ -81,11 +80,10 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         self._remaining_time_buf = deque(maxlen=SAMPLES)
 
         _LOGGER.debug("Assign SMBUS")
-        if not config.get(CONF_USE_MOCK):
-            _LOGGER.debug("Assign SMBUS")
+        try:
             self._bus = smbus.SMBus(1)
-        else:
-            _LOGGER.debug("Dont assign SMBUS, since its a mock")
+        except Exception as e:
+            _LOGGER.error(f"Failed to initialize SMBUS: {str(e)}")
             self._bus = None
 
         _LOGGER.debug("Call super")
@@ -100,16 +98,17 @@ class UpsHatECoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         try:
-            try:
+            data = 0x00
+            if not self._bus is None:
                 data = self._bus.read_i2c_block_data(self._addr, REG_CHARGING, 0x01)
-            except Exception as e:
-                _LOGGER.warning(f"PIHAT Exception: {str(e)}")
 
             self._is_online = bool(data[0] & 0x20)
             self._is_fast_charging = bool(data[0] & 0x40)
             self._is_charging = bool(data[0] & 0x80)
 
-            data = self._bus.read_i2c_block_data(self._addr, REG_BUSVOLTAGE, 0x06)
+            if not self._bus is None:
+                data = self._bus.read_i2c_block_data(self._addr, REG_BUSVOLTAGE, 0x06)
+
             charger_voltage = int.from_bytes(data[0:2], "little", signed=True)
 
             self._charger_voltage_buf.append(charger_voltage)
@@ -124,7 +123,11 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             _LOGGER.debug("VBUS Current %5dmA", charger_current)
             _LOGGER.debug("VBUS Power   %5dmW", charger_power)
 
-            data = self._bus.read_i2c_block_data(self._addr, REG_BATVOLTAGE, 0x0C)
+            if not self._bus is None:
+                data = self._bus.read_i2c_block_data(self._addr, REG_BATVOLTAGE, 0x0C)
+            else:
+                data = [0] * 12
+
             battery_voltage = int.from_bytes(data[0:2], "little", signed=True)
             self._battery_voltage_buf.append(int(battery_voltage))
             _LOGGER.debug("Battery Voltage %d mV", battery_voltage)
@@ -157,7 +160,11 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             # Simplistic solution where both types of values go to the same buffer
             self._remaining_time_buf.append(remaining_time)
 
-            data = self._bus.read_i2c_block_data(self._addr, REG_CELL_1_VOLTAGE, 0x08)
+            if not self._bus is None:
+                data = self._bus.read_i2c_block_data(self._addr, REG_CELL_1_VOLTAGE, 0x08)
+            else:
+                data = [0] * 8
+
             cell1_voltage = int.from_bytes(data[0:2], "little", signed=True)
             cell2_voltage = int.from_bytes(data[2:4], "little", signed=True)
             cell3_voltage = int.from_bytes(data[4:6], "little", signed=True)
@@ -189,13 +196,20 @@ class UpsHatECoordinator(DataUpdateCoordinator):
 
             _LOGGER.debug(f"UPS_HAT_E DATA 2: {self.data}")
             return self.data
+
         except Exception as e:
             raise UpdateFailed(f"Error updating data: {e}")
 
     def _writeByte(self, register, data):
         temp = [0]
         temp[0] = data & 0xFF
-        self._bus.write_i2c_block_data(self._addr, register, temp)
+        if not self._bus is None:
+            try:
+                self._bus.write_i2c_block_data(self._addr, register, temp)
+            except Exception as e:
+                raise UpdateFailed(f"Error writing to I2C device: {e}")
+        else:
+            _LOGGER.warning("I2C bus not initialized")
 
     async def shutdown(self):
         """Shut down the UPS Hat E device if not plugged in."""
