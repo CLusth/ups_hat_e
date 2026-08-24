@@ -11,6 +11,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     CONF_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL,
 )
 from .coordinator import UpsHatECoordinator
 
@@ -25,7 +26,7 @@ async def _async_setup_coordinator(
     """Set up and refresh the UPS Hat E coordinator."""
     config = dict(config)
     config[CONF_SCAN_INTERVAL] = timedelta(
-        seconds=config.get(CONF_SCAN_INTERVAL, 30)
+        seconds=config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     )
 
     coordinator = UpsHatECoordinator(hass, config, config_entry=config_entry)

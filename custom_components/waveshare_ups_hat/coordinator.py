@@ -98,7 +98,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         try:
-            data = 0x00
+            data = [0] * 1
             if not self._bus is None:
                 data = self._bus.read_i2c_block_data(self._addr, REG_CHARGING, 0x01)
 

@@ -4,6 +4,7 @@ DOMAIN = "waveshare_ups_hat"
 DEFAULT_ADDR = "0x2d"
 DEFAULT_UNIQUE_ID = "ups_hat_e"
 DEFAULT_NAME = "UPS HAT E"
+DEFAULT_SCAN_INTERVAL = 30
 
 CONF_ADDR = "I2C address"
 CONF_SCAN_INTERVAL = "Scan interval (seconds)"

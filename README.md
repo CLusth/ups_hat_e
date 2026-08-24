@@ -23,6 +23,8 @@ Add the integration through **Settings -> Devices & services -> Add integration*
 and search for **Waveshare Pi UPS Hat (E)**. Enter the I2C address, device name,
 unique ID, and scan interval in the setup form.
 
+_Note: If you previosly have installed (v1.0.3 or earlier) this integration you need to remove old configuration from the configuran.yaml file_
+
 ### Example automation
 
 Simple automation that trigger shutdown before the batttery is running out.

@@ -12,6 +12,7 @@ from .const import (
     CONF_SCAN_INTERVAL,
     DEFAULT_ADDR,
     DEFAULT_NAME,
+    DEFAULT_SCAN_INTERVAL,
     DEFAULT_UNIQUE_ID,
     DOMAIN,
 )
@@ -29,7 +30,8 @@ class WaveshareUpsHatConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(address)
             self._abort_if_unique_id_configured()
             return self.async_create_entry(
-                title=user_input[CONF_NAME], data=user_input
+                title=user_input[CONF_NAME],
+                data=user_input
             )
 
         schema = vol.Schema(
@@ -37,7 +39,9 @@ class WaveshareUpsHatConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_NAME, default=DEFAULT_NAME): str,
                 vol.Required(CONF_UNIQUE_ID, default=DEFAULT_UNIQUE_ID): str,
                 vol.Required(CONF_ADDR, default=DEFAULT_ADDR): str,
-                vol.Required(CONF_SCAN_INTERVAL, default=30): vol.All(
+                vol.Required(
+                    CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL
+                ): vol.All(
                     vol.Coerce(int), vol.Range(min=1)
                 ),
             }
