@@ -36,8 +36,9 @@ async def _async_setup_coordinator(
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Waveshare UPS Hat E from a config entry."""
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     coordinator = await _async_setup_coordinator(
-        hass, entry.data, config_entry=entry
+        hass, {**entry.data, **entry.options}, config_entry=entry
     )
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -47,3 +48,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a Waveshare UPS Hat E config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload the integration when its options are changed."""
+    await hass.config_entries.async_reload(entry.entry_id)

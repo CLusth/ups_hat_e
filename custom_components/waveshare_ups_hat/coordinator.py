@@ -15,6 +15,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import (
     CONF_ADDR,
     CONF_SCAN_INTERVAL,
+    CONF_SHUTDOWN_DELAY,
+    DEFAULT_SHUTDOWN_DELAY,
     DOMAIN,
     REG_BATVOLTAGE,
     REG_BUSVOLTAGE,
@@ -45,6 +47,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         _LOGGER.debug("Initialize coordinator")
         self.name_prefix = config.get(CONF_NAME)
         self.id_prefix = config.get(CONF_UNIQUE_ID)
+        self.shutdown_delay = config.get(CONF_SHUTDOWN_DELAY, DEFAULT_SHUTDOWN_DELAY)
         try:
             self._addr = int(str(config.get(CONF_ADDR)).strip(), 0)
         except:

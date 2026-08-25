@@ -23,6 +23,8 @@ Add the integration through **Settings -> Devices & services -> Add integration*
 and search for **Waveshare Pi UPS Hat (E)**. Enter the I2C address, device name,
 unique ID, and scan interval in the setup form.
 
+The scan interval can be changed later from the integration's **Configure** menu.
+
 _Note: If you previosly have installed (v1.0.3 or earlier) this integration you need to remove old configuration from the configuran.yaml file_
 
 ### Example automation
@@ -48,8 +50,7 @@ Simple automation that trigger shutdown before the batttery is running out.
 ## Known issues
 
 * The built in timer between triggering shutdown and when the power is cut is very short (~30s).
-  There is a risk HA is not gracefully shutdown. To mitigate this I have added a experimantal
-  extra delay (10s) but it might not be enough.
+  There is a risk HA is not gracefully shutdown. To mitigate this I have added a configurable delay (15s) but it might not be enough.
 
 * A reset of the HA will also trigger the UPS shutdown, i.e. there is currently nothing
   diffentiating between reset and shutdown. To mitigate this there is a built in condition
