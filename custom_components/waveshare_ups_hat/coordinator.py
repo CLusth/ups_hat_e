@@ -2,6 +2,7 @@
 
 import logging
 from collections import deque
+from datetime import timedelta
 from statistics import median
 
 import smbus2 as smbus
@@ -9,15 +10,14 @@ import smbus2 as smbus
 from homeassistant import core
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, CONF_UNIQUE_ID
-from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
     CONF_ADDR,
     CONF_SCAN_INTERVAL,
     CONF_SHUTDOWN_DELAY,
+    DEFAULT_SCAN_INTERVAL,
     DEFAULT_SHUTDOWN_DELAY,
-    DEFAULT_UNIQUE_ID,
     DOMAIN,
     REG_BATVOLTAGE,
     REG_BUSVOLTAGE,
@@ -41,18 +41,17 @@ class UpsHatECoordinator(DataUpdateCoordinator):
     def __init__(
         self,
         hass: core.HomeAssistant,
-        config: ConfigType,
-        config_entry: ConfigEntry | None = None,
+        config_entry: ConfigEntry,
     ) -> None:
         """Initialize coordinator."""
         _LOGGER.debug("Initialize coordinator")
+        config = {**config_entry.data, **config_entry.options}
         self.name_prefix = config.get(CONF_NAME)
-        self.id_prefix = (
-            config.get(CONF_UNIQUE_ID)
-            or (config_entry.unique_id if config_entry is not None else None)
-            or DEFAULT_UNIQUE_ID
-        )
+        _LOGGER.debug(f"Set name_prefix: {self.name_prefix}")
+
         self.shutdown_delay = config.get(CONF_SHUTDOWN_DELAY, DEFAULT_SHUTDOWN_DELAY)
+        _LOGGER.debug(f"Set shutdown_delay: {self.shutdown_delay}")
+
         try:
             self._addr = int(str(config.get(CONF_ADDR)).strip(), 0)
         except:
@@ -77,6 +76,21 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             "fast_charging": False,
         }
 
+        _LOGGER.debug("Call super")
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_interval=timedelta(
+                seconds=config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+            ),
+            always_update=True,
+            config_entry=config_entry,
+        )
+
+    async def _async_setup(self) -> None:
+        """Set up the coordinator."""
+
         self._is_online = False
         self._is_charging = False
         self._is_fast_charging = False
@@ -94,15 +108,8 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             _LOGGER.error(f"Failed to initialize SMBUS: {str(e)}")
             self._bus = None
 
-        _LOGGER.debug("Call super")
-        super().__init__(
-            hass,
-            _LOGGER,
-            name=DOMAIN,
-            update_interval=config.get(CONF_SCAN_INTERVAL),
-            always_update=True,
-            config_entry=config_entry,
-        )
+        await super()._async_setup()
+        _LOGGER.debug("Coordinator setup complete")
 
     async def _async_update_data(self):
         try:

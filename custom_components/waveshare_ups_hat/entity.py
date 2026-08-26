@@ -16,7 +16,7 @@ class UpsHatEEntity(CoordinatorEntity):
         self._coordinator = coordinator
         if coordinator.config_entry is not None:
             self._attr_device_info = DeviceInfo(
-                identifiers={(DOMAIN, coordinator.id_prefix or DOMAIN)},
+                identifiers={(DOMAIN, coordinator.name_prefix or DOMAIN)},
                 name=coordinator.name_prefix,
                 manufacturer="Waveshare Pi UPS Hat E",
             )
@@ -27,12 +27,12 @@ class UpsHatEEntity(CoordinatorEntity):
     @property
     def name(self):
         """Return the name of the UPS Hat E entity."""
-        return self._coordinator.name_prefix + " " + self._name
+        return f"{self._coordinator.name_prefix} {self._name}"
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID for the UPS Hat E entity."""
-        return f"{self._coordinator.id_prefix or DOMAIN}_{self._name}"
+        return f"{self._coordinator.config_entry.unique_id}_{self._name}"
 
     @callback
     def _handle_coordinator_update(self) -> None:
