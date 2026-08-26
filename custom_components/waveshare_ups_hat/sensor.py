@@ -2,7 +2,8 @@
 
 import logging
 
-from homeassistant import core
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.components.sensor.const import SensorDeviceClass, SensorStateClass
 from homeassistant.const import (
@@ -14,25 +15,19 @@ from homeassistant.const import (
     UnitOfTime,
 )
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .entity import UpsHatEEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(
-    hass: core.HomeAssistant,
-    config: ConfigType,
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
-    """Set up UPS Hat E sensors via platform discovery."""
-    # We only want this platform to be set up via discovery.
-    if discovery_info is None:
-        return
-
-    coordinator = discovery_info.get("coordinator")
+    """Set up UPS Hat E sensors."""
+    coordinator = entry.runtime_data
 
     sensors = [
         ChargerVoltageSensor(coordinator),

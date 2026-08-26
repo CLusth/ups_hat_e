@@ -17,6 +17,7 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_SHUTDOWN_DELAY,
     DEFAULT_SHUTDOWN_DELAY,
+    DEFAULT_UNIQUE_ID,
     DOMAIN,
     REG_BATVOLTAGE,
     REG_BUSVOLTAGE,
@@ -46,7 +47,11 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         """Initialize coordinator."""
         _LOGGER.debug("Initialize coordinator")
         self.name_prefix = config.get(CONF_NAME)
-        self.id_prefix = config.get(CONF_UNIQUE_ID)
+        self.id_prefix = (
+            config.get(CONF_UNIQUE_ID)
+            or (config_entry.unique_id if config_entry is not None else None)
+            or DEFAULT_UNIQUE_ID
+        )
         self.shutdown_delay = config.get(CONF_SHUTDOWN_DELAY, DEFAULT_SHUTDOWN_DELAY)
         try:
             self._addr = int(str(config.get(CONF_ADDR)).strip(), 0)

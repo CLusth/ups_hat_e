@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -16,10 +18,10 @@ from .const import (
     DEFAULT_NAME,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SHUTDOWN_DELAY,
-    DEFAULT_UNIQUE_ID,
     DOMAIN,
 )
 
+_LOGGER = logging.getLogger(__name__)
 
 class WaveshareUpsHatConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Waveshare Pi UPS Hat (E)."""
@@ -35,8 +37,10 @@ class WaveshareUpsHatConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         """Handle the user step."""
         if user_input is not None:
-            address = str(user_input[CONF_ADDR]).strip().lower()
-            await self.async_set_unique_id(address)
+            unique_id = "UPS_HAT_E_" + str(user_input[CONF_ADDR]).strip().lower()
+            _LOGGER.debug(f"Set unique_id: {unique_id}")
+            await self.async_set_unique_id(unique_id)
+
             self._abort_if_unique_id_configured()
             return self.async_create_entry(
                 title=user_input[CONF_NAME],

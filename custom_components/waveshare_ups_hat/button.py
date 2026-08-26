@@ -6,10 +6,10 @@ import asyncio
 import logging
 
 from homeassistant.components.button import ButtonDeviceClass, ButtonEntity
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory, EVENT_HOMEASSISTANT_CLOSE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .coordinator import UpsHatECoordinator
 from .entity import UpsHatEEntity
@@ -17,18 +17,13 @@ from .entity import UpsHatEEntity
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(
+async def async_setup_entry(
     hass: HomeAssistant,
-    config: ConfigType,
+    entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
-    """Set up button platform."""
-    # We only want this platform to be set up via discovery.
-    if discovery_info is None:
-        return
-
-    coordinator = discovery_info.get("coordinator")
+    """Set up the shutdown button."""
+    coordinator = entry.runtime_data
 
     async_add_entities([ShutdownButton(hass, coordinator)])
 
