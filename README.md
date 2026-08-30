@@ -7,6 +7,10 @@ _Note: This is for the (E) version only._
 
 ![UPS HAT (E) for Raspberry](https://github.com/CLusth/ups_hat_e/blob/master/images/UPS-HAT-E-details-1.jpg?raw=true)
 
+## Prerequisites
+
+Enable I2C on your RaspberryPi board. (See trouble shooting below)
+
 ## Installation
 
 The integration can be installed using [HACS](https://hacs.xyz/). The integrations is not
@@ -25,7 +29,7 @@ unique ID, and scan interval in the setup form.
 
 The scan interval can be changed later from the integration's **Configure** menu.
 
-_Note: If you previosly have installed (v1.0.3 or earlier) this integration you need to remove old configuration from the configuran.yaml file_
+_Note: If you previosly have installed (v1.0.3 or earlier) you need to remove the old configuration from the configuran.yaml file_
 
 ### Example automation
 
@@ -46,6 +50,34 @@ Simple automation that trigger shutdown before the batttery is running out.
        data: {}
    mode: single
    ```
+
+## Trouble shooting
+
+### Problem
+
+```
+Error during setup of component waveshare_ups_hat: [Errno 2] No such file or directory: '/dev/i2c-1'
+```
+
+The I2C bus is not enabled on you RaspberryPi board.
+
+### Solution
+
+* Use [HassOSConfigurator](https://github.com/adamoutler/HassOSConfigurator) to enable I2C from Home Assitant. (Don't forget to reboot twice)
+
+or
+
+* Use raspi-config CLI application, see [Waveshare wiki](https://www.waveshare.com/wiki/UPS_HAT_(E)) for details.
+
+### Problem
+
+```
+The 'waveshare_ups_hat' integration does not support YAML setup, please remove it from your configuration
+```
+
+### Solution
+
+Remove all configuration for Waveshare_ups_hat_e in your config.yaml
 
 ## Known issues
 
