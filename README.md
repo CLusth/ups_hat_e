@@ -43,7 +43,13 @@ triggers:
     entity_id:
       - sensor.ups_hat_e_soc
     below: 10
-conditions: []
+conditions:
+  - condition: battery.is_not_charging
+    target:
+      entity_id: binary_sensor.ups_hat_e_charging
+    options:
+      behavior: any
+      for: '00:00:00'
 actions:
   - action: hassio.host_shutdown
     metadata: {}
@@ -72,7 +78,8 @@ or
 ### Problem with old config
 
 ```text
-The 'waveshare_ups_hat' integration does not support YAML setup, please remove it from your configuration
+The 'waveshare_ups_hat' integration does not support YAML setup, 
+please remove it from your configuration
 ```
 
 #### Solution
@@ -80,14 +87,14 @@ The 'waveshare_ups_hat' integration does not support YAML setup, please remove i
  1. Remove all old configuration for Waveshare_ups_hat_e in your configuration.yaml.
  2. Restart Home Assistant
 
-### Problem with Old entities becomes "Unavaialbe" after update.
+### Problem with old entities becomes "Unavaialbe" after update
 
 Newer versions of this integration uses UI configuration instead of YAML, that will create duplicates of all entities.
 
 #### Solution
 
  1. Remove all the old entilies beloning to the device. They are easy to filter out in the **Settings -> Devices & services -> Entities** page.
- 2. Open each (avalable) entity belonging to the device and change the Entity ID, iether manually or just click the "Restore Entitiy ID". Most likely the only thing that differs is that they have an extra "_2" postfix.
+ 2. Open each (avalable) entity belonging to the device and change the Entity ID, iether manually or just click the "Restore Entitiy ID". Most likely the only thing that differs is that they have an extra "_2" postfix that you should remove.
 
 ## Known issues
 

@@ -22,9 +22,9 @@ async def _async_setup_coordinator(
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Waveshare UPS Hat E from a config entry."""
-    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     coordinator = await _async_setup_coordinator(hass, entry)
     entry.runtime_data = coordinator
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 

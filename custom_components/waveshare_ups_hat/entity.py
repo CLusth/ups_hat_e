@@ -13,7 +13,6 @@ class UpsHatEEntity(CoordinatorEntity):
 
     def __init__(self, coordinator: UpsHatECoordinator) -> None:
         """Initialize a UPS Hat E entity."""
-        self._coordinator = coordinator
         if coordinator.config_entry is not None:
             self._attr_device_info = DeviceInfo(
                 identifiers={(DOMAIN, coordinator.name_prefix or DOMAIN)},
@@ -22,18 +21,18 @@ class UpsHatEEntity(CoordinatorEntity):
                 model="Pi UPS Hat (E)",
             )
 
-        """Pass coordinator to CoordinatorEntity."""
+        # Pass coordinator to CoordinatorEntity.
         super().__init__(coordinator)
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the UPS Hat E entity."""
-        return f"{self._coordinator.name_prefix} {self._name}"
+        return f"{self.coordinator.name_prefix} {self._name}"
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID for the UPS Hat E entity."""
-        return f"{self._coordinator.config_entry.unique_id}_{self._name}"
+        return f"{self.coordinator.config_entry.unique_id}_{self._name}"
 
     @callback
     def _handle_coordinator_update(self) -> None:

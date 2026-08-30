@@ -47,11 +47,11 @@ class ShutdownButton(UpsHatEEntity, ButtonEntity):
 
     async def _async_shutdown_event_handler(self, call) -> None:
         _LOGGER.debug("Shutdown event handled: %s (async)", call.data)
-        _LOGGER.debug("Wait for shutdown: %d (seconds)", self._coordinator.shutdown_delay)
-        await asyncio.sleep(self._coordinator.shutdown_delay)
+        _LOGGER.debug("Wait for shutdown: %d (seconds)", self.coordinator.shutdown_delay)
+        await asyncio.sleep(self.coordinator.shutdown_delay)
         await self.async_press()
 
     async def async_press(self) -> None:
         """Handle button press to initiate UPS shutdown."""
         _LOGGER.debug("ShutdownButton pressed (async)")
-        await self._coordinator.shutdown()
+        await self.coordinator.shutdown()

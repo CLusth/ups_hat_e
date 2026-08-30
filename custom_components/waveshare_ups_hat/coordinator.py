@@ -114,14 +114,14 @@ class UpsHatECoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         try:
             data = [0] * 1
-            if not self._bus is None:
+            if self._bus is not None:
                 data = self._bus.read_i2c_block_data(self._addr, REG_CHARGING, 0x01)
 
             self._is_online = bool(data[0] & 0x20)
             self._is_fast_charging = bool(data[0] & 0x40)
             self._is_charging = bool(data[0] & 0x80)
 
-            if not self._bus is None:
+            if self._bus is not None:
                 data = self._bus.read_i2c_block_data(self._addr, REG_BUSVOLTAGE, 0x06)
 
             charger_voltage = int.from_bytes(data[0:2], "little", signed=True)
@@ -138,7 +138,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             _LOGGER.debug("VBUS Current %5dmA", charger_current)
             _LOGGER.debug("VBUS Power   %5dmW", charger_power)
 
-            if not self._bus is None:
+            if self._bus is not None:
                 data = self._bus.read_i2c_block_data(self._addr, REG_BATVOLTAGE, 0x0C)
             else:
                 data = [0] * 12
@@ -175,7 +175,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             # Simplistic solution where both types of values go to the same buffer
             self._remaining_time_buf.append(remaining_time)
 
-            if not self._bus is None:
+            if self._bus is not None:
                 data = self._bus.read_i2c_block_data(self._addr, REG_CELL_1_VOLTAGE, 0x08)
             else:
                 data = [0] * 8
@@ -218,7 +218,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
     def _writeByte(self, register, data):
         temp = [0]
         temp[0] = data & 0xFF
-        if not self._bus is None:
+        if self._bus is not None:
             try:
                 self._bus.write_i2c_block_data(self._addr, register, temp)
             except Exception as e:
