@@ -18,7 +18,8 @@ class UpsHatEEntity(CoordinatorEntity):
             self._attr_device_info = DeviceInfo(
                 identifiers={(DOMAIN, coordinator.name_prefix or DOMAIN)},
                 name=coordinator.name_prefix,
-                manufacturer="Waveshare Pi UPS Hat E",
+                manufacturer="Waveshare",
+                model="Pi UPS Hat (E)",
             )
 
         """Pass coordinator to CoordinatorEntity."""

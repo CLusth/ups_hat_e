@@ -209,7 +209,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
                 "fast_charging": self._is_fast_charging,
             }
 
-            _LOGGER.debug(f"UPS_HAT_E DATA 2: {self.data}")
+            #_LOGGER.debug(f"UPS_HAT_E DATA 2: {self.data}")
             return self.data
 
         except Exception as e:

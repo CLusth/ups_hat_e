@@ -25,9 +25,9 @@ Alternatively you can use the button below:
 
 Add the integration through **Settings -> Devices & services -> Add integration**
 and search for **Waveshare Pi UPS Hat (E)**. Enter the I2C address, device name,
-unique ID, and scan interval in the setup form.
+unique ID, scan interval and shutdown delay in the setup form. They all have default values that should work.
 
-The scan interval can be changed later from the integration's **Configure** menu.
+The scan interval and shutdown delay can be changed later from the integration's **Configure** menu.
 
 _Note: If you previosly have installed (v1.0.3 or earlier) you need to remove the old configuration from the configuran.yaml file_
 
@@ -35,33 +35,33 @@ _Note: If you previosly have installed (v1.0.3 or earlier) you need to remove th
 
 Simple automation that trigger shutdown before the batttery is running out.
 
-   ```
-   alias: Low battery shutdown
-   description: "Shutdown HA when SoC is belew the threshold."
-   triggers:
-     - trigger: numeric_state
-       entity_id:
-         - sensor.ups_hat_e_soc
-       below: 10
-   conditions: []
-   actions:
-     - action: hassio.host_shutdown
-       metadata: {}
-       data: {}
-   mode: single
-   ```
+```yaml
+alias: Low battery shutdown
+description: "Shutdown HA when SoC is belew the threshold."
+triggers:
+  - trigger: numeric_state
+    entity_id:
+      - sensor.ups_hat_e_soc
+    below: 10
+conditions: []
+actions:
+  - action: hassio.host_shutdown
+    metadata: {}
+    data: {}
+mode: single
+```
 
 ## Trouble shooting
 
-### Problem
+### Problem with I2C
 
-```
+```text
 Error during setup of component waveshare_ups_hat: [Errno 2] No such file or directory: '/dev/i2c-1'
 ```
 
 The I2C bus is not enabled on you RaspberryPi board.
 
-### Solution
+#### Solution
 
 * Use [HassOSConfigurator](https://github.com/adamoutler/HassOSConfigurator) to enable I2C from Home Assitant. (Don't forget to reboot twice)
 
@@ -69,21 +69,31 @@ or
 
 * Use raspi-config CLI application, see [Waveshare wiki](https://www.waveshare.com/wiki/UPS_HAT_(E)) for details.
 
-### Problem
+### Problem with old config
 
-```
+```text
 The 'waveshare_ups_hat' integration does not support YAML setup, please remove it from your configuration
 ```
 
-### Solution
+#### Solution
 
-Remove all configuration for Waveshare_ups_hat_e in your config.yaml
+ 1. Remove all old configuration for Waveshare_ups_hat_e in your configuration.yaml.
+ 2. Restart Home Assistant
+
+### Problem with Old entities becomes "Unavaialbe" after update.
+
+Newer versions of this integration uses UI configuration instead of YAML, that will create duplicates of all entities.
+
+#### Solution
+
+ 1. Remove all the old entilies beloning to the device. They are easy to filter out in the **Settings -> Devices & services -> Entities** page.
+ 2. Open each (avalable) entity belonging to the device and change the Entity ID, iether manually or just click the "Restore Entitiy ID". Most likely the only thing that differs is that they have an extra "_2" postfix.
 
 ## Known issues
 
 * The built in timer between triggering shutdown and when the power is cut is very short (~30s).
-  There is a risk HA is not gracefully shutdown. To mitigate this I have added a configurable delay (15s) but it might not be enough.
-
+  There is a risk HA is not gracefully shutdown. To mitigate this I have added a configurable delay but it might not be enough.
+  Its very hard to get a graceful shutdown.
 * A reset of the HA will also trigger the UPS shutdown, i.e. there is currently nothing
   diffentiating between reset and shutdown. To mitigate this there is a built in condition
   that the shutdown is not performed if there is power from the changer.
