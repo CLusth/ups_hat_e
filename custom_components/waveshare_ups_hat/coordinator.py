@@ -6,6 +6,7 @@ from datetime import timedelta
 from statistics import median
 
 import smbus2 as smbus
+import asyncio
 
 from homeassistant import core
 from homeassistant.config_entries import ConfigEntry
@@ -215,14 +216,18 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         except Exception as e:
             raise UpdateFailed(f"Error updating data: {e}")
 
-    def _writeByte(self, register, data):
+    async def _writeByte(self, register, data):
+        """Write a byte to a device register via I2C."""
         temp = [0]
         temp[0] = data & 0xFF
         if self._bus is not None:
-            try:
-                self._bus.write_i2c_block_data(self._addr, register, temp)
-            except Exception as e:
-                raise UpdateFailed(f"Error writing to I2C device: {e}")
+            loop = asyncio.get_running_loop()
+            lock = asyncio.Lock()
+            async with lock:
+                # Run the blocking smbus2 call in a default executor thread
+                await loop.run_in_executor(
+                    None, self.smbus.write_byte_data, self._addr, register, temp[0]
+                )
         else:
             _LOGGER.warning("I2C bus not initialized")
 
@@ -230,4 +235,4 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         """Shut down the UPS Hat E device if not plugged in."""
         # Only allow shutdown if not plugged id
         if not self._is_online:
-            self._writeByte(REG_REBOOT, CONST_SHUTDOWN_CMD)
+            await self._writeByte(REG_REBOOT, CONST_SHUTDOWN_CMD)
