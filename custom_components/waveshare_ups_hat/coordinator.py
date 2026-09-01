@@ -218,18 +218,19 @@ class UpsHatECoordinator(DataUpdateCoordinator):
 
     async def _writeByte(self, register, data):
         """Write a byte to a device register via I2C."""
-        temp = [0]
-        temp[0] = data & 0xFF
-        if self._bus is not None:
-            loop = asyncio.get_running_loop()
-            lock = asyncio.Lock()
-            async with lock:
-                # Run the blocking smbus2 call in a default executor thread
-                await loop.run_in_executor(
-                    None, self._bus.write_byte_data, self._addr, register, temp[0]
-                )
-        else:
-            _LOGGER.warning("I2C bus not initialized")
+
+        loop = asyncio.get_running_loop()
+        lock = asyncio.Lock()
+        async with lock:
+            temp = [0]
+            temp[0] = data & 0xFF
+
+            # Run the blocking smbus2 call in a default executor thread
+            result = await loop.run_in_executor(
+                None, self._bus.write_byte_data, self._addr, register, temp[0]
+            )
+
+        return result
 
     async def shutdown(self):
         """Shut down the UPS Hat E device if not plugged in."""
