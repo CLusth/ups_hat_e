@@ -226,7 +226,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             async with lock:
                 # Run the blocking smbus2 call in a default executor thread
                 await loop.run_in_executor(
-                    None, self.smbus.write_byte_data, self._addr, register, temp[0]
+                    None, self._bus.write_byte_data, self._addr, register, temp[0]
                 )
         else:
             _LOGGER.warning("I2C bus not initialized")
