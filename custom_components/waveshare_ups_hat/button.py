@@ -34,20 +34,23 @@ class ShutdownButton(UpsHatEEntity, ButtonEntity):
     def __init__(self, hass: HomeAssistant, coordinator: UpsHatECoordinator) -> None:
         """Initialize the ShutdownButton entity."""
         super().__init__(coordinator)
+        self._hass = hass
         self._name = "Shutdown"
         self._attr_device_class = ButtonDeviceClass.RESTART
         self._attr_entity_category = EntityCategory.CONFIG
 
-        # Add a listener to detect when Home Assistant is shutting down
-        hass.bus.async_listen(
-            EVENT_HOMEASSISTANT_CLOSE, self._async_shutdown_event_handler
-        )
-
         _LOGGER.debug("ShutdownButton initialized")
 
+    async def async_added_to_hass(self) -> None:
+        """Register the shutdown listener for this entity's lifetime."""
+        await super().async_added_to_hass()
+        remove_listener = self._hass.bus.async_listen(
+            EVENT_HOMEASSISTANT_CLOSE, self._async_shutdown_event_handler
+        )
+        self.async_on_remove(remove_listener)
+
     async def _async_shutdown_event_handler(self, call) -> None:
-        _LOGGER.debug("Shutdown event handled: %s (async)", call.data)
-        _LOGGER.debug("Wait for shutdown: %d (seconds)", self.coordinator.shutdown_delay)
+        _LOGGER.debug("Shutdown event handled. Wait for shutdown: %d (seconds)", self.coordinator.shutdown_delay)
         await asyncio.sleep(self.coordinator.shutdown_delay)
         await self.async_press()
 

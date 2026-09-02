@@ -77,7 +77,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             "fast_charging": False,
         }
 
-        _LOGGER.debug("Call super")
+        _LOGGER.debug(f"Set scan interval: {config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)}")
         super().__init__(
             hass,
             _LOGGER,
@@ -248,4 +248,4 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         if not self._is_online:
             await self._writeByte(REG_REBOOT, CONST_SHUTDOWN_CMD)
         else:
-            _LOGGER.warning("Cannot shut down UPS Hat E: device is plugged in")
+            _LOGGER.debug("Skipping shutdown: UPS Hat E is plugged in")
