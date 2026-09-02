@@ -112,6 +112,18 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         await super()._async_setup()
         _LOGGER.debug("Coordinator setup complete")
 
+    async def async_close(self) -> None:
+        """Close the coordinator and clean up resources."""
+        _LOGGER.debug("Closing coordinator")
+        if self._bus is not None:
+            try:
+                self._bus.close()
+                _LOGGER.debug("SMBUS closed successfully")
+            except Exception as e:
+                _LOGGER.error(f"Failed to close SMBUS: {str(e)}")
+
+        _LOGGER.debug("Coordinator closed")
+
     async def _async_update_data(self):
         try:
             data = [0] * 1
@@ -218,19 +230,16 @@ class UpsHatECoordinator(DataUpdateCoordinator):
 
     async def _writeByte(self, register, data):
         """Write a byte to a device register via I2C."""
-
-        loop = asyncio.get_running_loop()
-        lock = asyncio.Lock()
-        async with lock:
-            temp = [0]
-            temp[0] = data & 0xFF
-
-            # Run the blocking smbus2 call in a default executor thread
-            result = await loop.run_in_executor(
-                None, self._bus.write_byte_data, self._addr, register, temp[0]
-            )
-
-        return result
+        if self._bus is not None:
+            loop = asyncio.get_running_loop()
+            lock = asyncio.Lock()
+            async with lock:
+                temp = [0]
+                temp[0] = data & 0xFF
+                # Run the blocking smbus2 call in a default executor thread
+                await loop.run_in_executor(
+                    None, self._bus.write_byte_data, self._addr, register, temp[0]
+                )
 
     async def shutdown(self):
         """Shut down the UPS Hat E device if not plugged in."""
