@@ -243,8 +243,6 @@ class UpsHatECoordinator(DataUpdateCoordinator):
 
     async def shutdown(self):
         """Shut down the UPS Hat E device if not plugged in."""
-        # Only allow shutdown if not plugged id
-        await self._async_update_data()  # Ensure the latest data is fetched
         if not self._is_online:
             await self._writeByte(REG_REBOOT, CONST_SHUTDOWN_CMD)
         else:
