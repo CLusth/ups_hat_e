@@ -259,7 +259,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         if self._bus is not None:
             temp = [0]
             temp[0] = data & 0xFF
-            await self._bus.async_write_byte_data(self._addr, register, temp[0])
+            await self.async_write_byte_data(self._addr, register, temp[0])
 
     async def shutdown(self):
         """Shut down the UPS Hat E device if not plugged in."""
