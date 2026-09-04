@@ -128,14 +128,14 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         try:
             data = [0] * 1
             if self._bus is not None:
-                data = self._bus.read_i2c_block_data(self._addr, REG_CHARGING, 0x01)
+                data = await self.async_read_i2c_block_data(self._addr, REG_CHARGING, 0x01)
 
             self._is_online = bool(data[0] & 0x20)
             self._is_fast_charging = bool(data[0] & 0x40)
             self._is_charging = bool(data[0] & 0x80)
 
             if self._bus is not None:
-                data = self._bus.read_i2c_block_data(self._addr, REG_BUSVOLTAGE, 0x06)
+                data = await self.async_read_i2c_block_data(self._addr, REG_BUSVOLTAGE, 0x06)
 
             charger_voltage = int.from_bytes(data[0:2], "little", signed=True)
 
@@ -152,7 +152,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             _LOGGER.debug("VBUS Power   %5dmW", charger_power)
 
             if self._bus is not None:
-                data = self._bus.read_i2c_block_data(self._addr, REG_BATVOLTAGE, 0x0C)
+                data = await self.async_read_i2c_block_data(self._addr, REG_BATVOLTAGE, 0x0C)
             else:
                 data = [0] * 12
 
@@ -189,7 +189,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             self._remaining_time_buf.append(remaining_time)
 
             if self._bus is not None:
-                data = self._bus.read_i2c_block_data(self._addr, REG_CELL_1_VOLTAGE, 0x08)
+                data = await self.async_read_i2c_block_data(self._addr, REG_CELL_1_VOLTAGE, 0x08)
             else:
                 data = [0] * 8
 
@@ -228,18 +228,38 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         except Exception as e:
             raise UpdateFailed(f"Error updating data: {e}")
 
+    async def async_read_i2c_block_data(self, i2c_addr, register, length):
+        """Read a block of byte data from a given register."""
+        loop = asyncio.get_running_loop()
+        lock = asyncio.Lock()
+        async with lock:
+            result = await loop.run_in_executor(
+                None,
+                self._bus.read_i2c_block_data,
+                i2c_addr,
+                register,
+                length,
+            )
+
+        return result
+
+    async def async_write_byte_data(self, i2c_addr, register, value):
+        """Write a byte to a given register."""
+        loop = asyncio.get_running_loop()
+        lock = asyncio.Lock()
+        async with lock:
+            result = await loop.run_in_executor(
+                None, self._bus.write_byte_data, i2c_addr, register, value
+            )
+
+        return result
+
     async def _writeByte(self, register, data):
         """Write a byte to a device register via I2C."""
         if self._bus is not None:
-            loop = asyncio.get_running_loop()
-            lock = asyncio.Lock()
-            async with lock:
-                temp = [0]
-                temp[0] = data & 0xFF
-                # Run the blocking smbus2 call in a default executor thread
-                await loop.run_in_executor(
-                    None, self._bus.write_byte_data, self._addr, register, temp[0]
-                )
+            temp = [0]
+            temp[0] = data & 0xFF
+            await self._bus.async_write_byte_data(self._addr, register, temp[0])
 
     async def shutdown(self):
         """Shut down the UPS Hat E device if not plugged in."""
