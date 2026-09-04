@@ -51,7 +51,7 @@ class ShutdownButton(UpsHatEEntity, ButtonEntity):
 
     async def _async_shutdown_event_handler(self, call) -> None:
         _LOGGER.debug("Shutdown event handled. Wait for shutdown: %d (seconds)", self.coordinator.shutdown_delay)
-        await self.self.coordinator._async_update_data()  # Ensure the latest data is fetched before shutdown
+        await self.coordinator._async_update_data()  # Ensure the latest data is fetched before shutdown
         await asyncio.sleep(self.coordinator.shutdown_delay)
         await self.async_press()
 
