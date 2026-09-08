@@ -102,6 +102,8 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         self._battery_voltage_buf = deque(maxlen=SAMPLES)
         self._remaining_time_buf = deque(maxlen=SAMPLES)
 
+        self._i2c_lock = asyncio.Lock()
+
         _LOGGER.debug("Assign SMBUS")
         try:
             self._bus = smbus.SMBus(1)
@@ -231,8 +233,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
     async def async_read_i2c_block_data(self, i2c_addr, register, length):
         """Read a block of byte data from a given register."""
         loop = asyncio.get_running_loop()
-        lock = asyncio.Lock()
-        async with lock:
+        async with self._i2c_lock:
             result = await loop.run_in_executor(
                 None,
                 self._bus.read_i2c_block_data,
@@ -246,8 +247,7 @@ class UpsHatECoordinator(DataUpdateCoordinator):
     async def async_write_byte_data(self, i2c_addr, register, value):
         """Write a byte to a given register."""
         loop = asyncio.get_running_loop()
-        lock = asyncio.Lock()
-        async with lock:
+        async with self._i2c_lock:
             result = await loop.run_in_executor(
                 None, self._bus.write_byte_data, i2c_addr, register, value
             )
