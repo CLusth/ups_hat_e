@@ -10,7 +10,7 @@ import asyncio
 
 from homeassistant import core
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_NAME, CONF_UNIQUE_ID
+from homeassistant.const import CONF_NAME
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
@@ -224,7 +224,8 @@ class UpsHatECoordinator(DataUpdateCoordinator):
                 "fast_charging": self._is_fast_charging,
             }
 
-            #_LOGGER.debug(f"UPS_HAT_E DATA 2: {self.data}")
+            # Dormant debug statement for data inspection
+            # _LOGGER.debug(f"UPS_HAT_E DATA 2: {self.data}")
             return self.data
 
         except Exception as e:

@@ -25,7 +25,7 @@ Alternatively you can use the button below:
 
 Add the integration through **Settings -> Devices & services -> Add integration**
 and search for **Waveshare Pi UPS Hat (E)**. Enter the I2C address, device name,
-unique ID, scan interval and shutdown delay in the setup form. They all have default values that should work.
+scan interval and shutdown delay in the setup form. They all have default values that should work.
 
 The scan interval and shutdown delay can be changed later from the integration's **Configure** menu.
 
