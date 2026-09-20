@@ -2,7 +2,8 @@
 
 import logging
 
-from homeassistant import core
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.components.sensor.const import SensorDeviceClass, SensorStateClass
 from homeassistant.const import (
@@ -14,25 +15,19 @@ from homeassistant.const import (
     UnitOfTime,
 )
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .entity import UpsHatEEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(
-    hass: core.HomeAssistant,
-    config: ConfigType,
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
-    """Set up UPS Hat E sensors via platform discovery."""
-    # We only want this platform to be set up via discovery.
-    if discovery_info is None:
-        return
-
-    coordinator = discovery_info.get("coordinator")
+    """Set up UPS Hat E sensors."""
+    coordinator = entry.runtime_data
 
     sensors = [
         ChargerVoltageSensor(coordinator),
@@ -65,7 +60,7 @@ class ChargerVoltageSensor(UpsHatEEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the voltage value reported by the UPS."""
-        return self._coordinator.data["charger_voltage"]
+        return self.coordinator.data["charger_voltage"]
 
 
 class ChargerCurrentSensor(UpsHatEEntity, SensorEntity):
@@ -82,7 +77,7 @@ class ChargerCurrentSensor(UpsHatEEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the current value reported by the UPS."""
-        return self._coordinator.data["charger_current"]
+        return self.coordinator.data["charger_current"]
 
 
 class ChargerPowerSensor(UpsHatEEntity, SensorEntity):
@@ -99,7 +94,7 @@ class ChargerPowerSensor(UpsHatEEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the power value reported by the UPS."""
-        return self._coordinator.data["charger_power"]
+        return self.coordinator.data["charger_power"]
 
 
 class BatteryVoltageSensor(UpsHatEEntity, SensorEntity):
@@ -116,7 +111,7 @@ class BatteryVoltageSensor(UpsHatEEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the voltage value reported by the UPS."""
-        return self._coordinator.data["battery_voltage"]
+        return self.coordinator.data["battery_voltage"]
 
 
 class BatteryCurrentSensor(UpsHatEEntity, SensorEntity):
@@ -133,7 +128,7 @@ class BatteryCurrentSensor(UpsHatEEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the current value reported by the UPS."""
-        return self._coordinator.data["battery_current"]
+        return self.coordinator.data["battery_current"]
 
 
 class SocSensor(UpsHatEEntity, SensorEntity):
@@ -150,7 +145,7 @@ class SocSensor(UpsHatEEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the SoC value reported by the UPS."""
-        return self._coordinator.data["soc"]
+        return self.coordinator.data["soc"]
 
 
 class RemainingCapacitySensor(UpsHatEEntity, SensorEntity):
@@ -167,7 +162,7 @@ class RemainingCapacitySensor(UpsHatEEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the capacity value reported by the UPS."""
-        return self._coordinator.data["remaining_battery_capacity"]
+        return self.coordinator.data["remaining_battery_capacity"]
 
 
 class RemainingTimeSensor(UpsHatEEntity, SensorEntity):
@@ -185,7 +180,7 @@ class RemainingTimeSensor(UpsHatEEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the remaining reported by the UPS."""
-        return self._coordinator.data["remaining_time"]
+        return self.coordinator.data["remaining_time"]
 
 
 class Cell1VoltageSensor(UpsHatEEntity, SensorEntity):
@@ -202,7 +197,7 @@ class Cell1VoltageSensor(UpsHatEEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the voltage value reported by the UPS."""
-        return self._coordinator.data["cell1_voltage"]
+        return self.coordinator.data["cell1_voltage"]
 
 
 class Cell2VoltageSensor(UpsHatEEntity, SensorEntity):
@@ -219,7 +214,7 @@ class Cell2VoltageSensor(UpsHatEEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the voltage value reported by the UPS."""
-        return self._coordinator.data["cell2_voltage"]
+        return self.coordinator.data["cell2_voltage"]
 
 
 class Cell3VoltageSensor(UpsHatEEntity, SensorEntity):
@@ -236,7 +231,7 @@ class Cell3VoltageSensor(UpsHatEEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the voltage value reported by the UPS."""
-        return self._coordinator.data["cell3_voltage"]
+        return self.coordinator.data["cell3_voltage"]
 
 
 class Cell4VoltageSensor(UpsHatEEntity, SensorEntity):
@@ -253,4 +248,4 @@ class Cell4VoltageSensor(UpsHatEEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the voltage value reported by the UPS."""
-        return self._coordinator.data["cell4_voltage"]
+        return self.coordinator.data["cell4_voltage"]

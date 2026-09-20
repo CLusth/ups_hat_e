@@ -6,25 +6,20 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .entity import UpsHatEEntity
 
 
-async def async_setup_platform(
+async def async_setup_entry(
     hass: HomeAssistant,
-    config: ConfigType,
+    entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
-    """Set up binary sensor platform."""
-    # We only want this platform to be set up via discovery.
-    if discovery_info is None:
-        return
-
-    coordinator = discovery_info.get("coordinator")
+    """Set up binary sensors."""
+    coordinator = entry.runtime_data
 
     sensors = [
         OnlineBinarySensor(coordinator),
@@ -47,7 +42,7 @@ class OnlineBinarySensor(UpsHatEEntity, BinarySensorEntity):
     @property
     def is_on(self):
         """Return True if the UPS Hat E is connected to power."""
-        return self._coordinator.data["online"]
+        return self.coordinator.data["online"]
 
 
 class ChargingBinarySensor(UpsHatEEntity, BinarySensorEntity):
@@ -62,7 +57,7 @@ class ChargingBinarySensor(UpsHatEEntity, BinarySensorEntity):
     @property
     def is_on(self):
         """Return True if the UPS Hat E is charging."""
-        return self._coordinator.data["charging"]
+        return self.coordinator.data["charging"]
 
 
 class FastChargingBinarySensor(UpsHatEEntity, BinarySensorEntity):
@@ -77,4 +72,4 @@ class FastChargingBinarySensor(UpsHatEEntity, BinarySensorEntity):
     @property
     def is_on(self):
         """Return True if the UPS Hat E is fast charging."""
-        return self._coordinator.data["fast_charging"]
+        return self.coordinator.data["fast_charging"]

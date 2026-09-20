@@ -2,18 +2,23 @@
 
 import logging
 from collections import deque
+from datetime import timedelta
 from statistics import median
 
 import smbus2 as smbus
+import asyncio
 
 from homeassistant import core
-from homeassistant.const import CONF_NAME, CONF_UNIQUE_ID
-from homeassistant.helpers.typing import ConfigType
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_NAME
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
     CONF_ADDR,
     CONF_SCAN_INTERVAL,
+    CONF_SHUTDOWN_DELAY,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SHUTDOWN_DELAY,
     DOMAIN,
     REG_BATVOLTAGE,
     REG_BUSVOLTAGE,
@@ -34,13 +39,22 @@ class UpsHatECoordinator(DataUpdateCoordinator):
     manages state buffers, and provides methods for device control.
     """
 
-    def __init__(self, hass: core.HomeAssistant, config: ConfigType) -> None:
+    def __init__(
+        self,
+        hass: core.HomeAssistant,
+        config_entry: ConfigEntry,
+    ) -> None:
         """Initialize coordinator."""
         _LOGGER.debug("Initialize coordinator")
+        config = {**config_entry.data, **config_entry.options}
         self.name_prefix = config.get(CONF_NAME)
-        self.id_prefix = config.get(CONF_UNIQUE_ID)
+        _LOGGER.debug(f"Set name_prefix: {self.name_prefix}")
+
+        self.shutdown_delay = config.get(CONF_SHUTDOWN_DELAY, DEFAULT_SHUTDOWN_DELAY)
+        _LOGGER.debug(f"Set shutdown_delay: {self.shutdown_delay}")
+
         try:
-            self._addr = int(config.get(CONF_ADDR))
+            self._addr = int(str(config.get(CONF_ADDR)).strip(), 0)
         except:
             _LOGGER.error(f"ADDR {config.get(CONF_ADDR)} for UPS Hat E is invalid.")
             raise
@@ -63,6 +77,21 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             "fast_charging": False,
         }
 
+        _LOGGER.debug(f"Set scan interval: {config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)}")
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_interval=timedelta(
+                seconds=config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+            ),
+            always_update=True,
+            config_entry=config_entry,
+        )
+
+    async def _async_setup(self) -> None:
+        """Set up the coordinator."""
+
         self._is_online = False
         self._is_charging = False
         self._is_fast_charging = False
@@ -73,30 +102,43 @@ class UpsHatECoordinator(DataUpdateCoordinator):
         self._battery_voltage_buf = deque(maxlen=SAMPLES)
         self._remaining_time_buf = deque(maxlen=SAMPLES)
 
-        _LOGGER.debug("Assign SMBUS")
-        self._bus = smbus.SMBus(1)
+        self._i2c_lock = asyncio.Lock()
 
-        _LOGGER.debug("Call super")
-        super().__init__(
-            hass,
-            _LOGGER,
-            name=DOMAIN,
-            update_interval=config.get(CONF_SCAN_INTERVAL),
-            always_update=True,
-        )
+        _LOGGER.debug("Assign SMBUS")
+        try:
+            self._bus = smbus.SMBus(1)
+        except Exception as e:
+            _LOGGER.error(f"Failed to initialize SMBUS: {str(e)}")
+            self._bus = None
+
+        await super()._async_setup()
+        _LOGGER.debug("Coordinator setup complete")
+
+    async def async_close(self) -> None:
+        """Close the coordinator and clean up resources."""
+        _LOGGER.debug("Closing coordinator")
+        if self._bus is not None:
+            try:
+                self._bus.close()
+                _LOGGER.debug("SMBUS closed successfully")
+            except Exception as e:
+                _LOGGER.error(f"Failed to close SMBUS: {str(e)}")
+
+        _LOGGER.debug("Coordinator closed")
 
     async def _async_update_data(self):
         try:
-            try:
-                data = self._bus.read_i2c_block_data(self._addr, REG_CHARGING, 0x01)
-            except Exception as e:
-                _LOGGER.warning(f"PIHAT Exception: {str(e)}")
+            data = [0] * 1
+            if self._bus is not None:
+                data = await self.async_read_i2c_block_data(self._addr, REG_CHARGING, 0x01)
 
             self._is_online = bool(data[0] & 0x20)
             self._is_fast_charging = bool(data[0] & 0x40)
             self._is_charging = bool(data[0] & 0x80)
 
-            data = self._bus.read_i2c_block_data(self._addr, REG_BUSVOLTAGE, 0x06)
+            if self._bus is not None:
+                data = await self.async_read_i2c_block_data(self._addr, REG_BUSVOLTAGE, 0x06)
+
             charger_voltage = int.from_bytes(data[0:2], "little", signed=True)
 
             self._charger_voltage_buf.append(charger_voltage)
@@ -111,7 +153,11 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             _LOGGER.debug("VBUS Current %5dmA", charger_current)
             _LOGGER.debug("VBUS Power   %5dmW", charger_power)
 
-            data = self._bus.read_i2c_block_data(self._addr, REG_BATVOLTAGE, 0x0C)
+            if self._bus is not None:
+                data = await self.async_read_i2c_block_data(self._addr, REG_BATVOLTAGE, 0x0C)
+            else:
+                data = [0] * 12
+
             battery_voltage = int.from_bytes(data[0:2], "little", signed=True)
             self._battery_voltage_buf.append(int(battery_voltage))
             _LOGGER.debug("Battery Voltage %d mV", battery_voltage)
@@ -144,7 +190,11 @@ class UpsHatECoordinator(DataUpdateCoordinator):
             # Simplistic solution where both types of values go to the same buffer
             self._remaining_time_buf.append(remaining_time)
 
-            data = self._bus.read_i2c_block_data(self._addr, REG_CELL_1_VOLTAGE, 0x08)
+            if self._bus is not None:
+                data = await self.async_read_i2c_block_data(self._addr, REG_CELL_1_VOLTAGE, 0x08)
+            else:
+                data = [0] * 8
+
             cell1_voltage = int.from_bytes(data[0:2], "little", signed=True)
             cell2_voltage = int.from_bytes(data[2:4], "little", signed=True)
             cell3_voltage = int.from_bytes(data[4:6], "little", signed=True)
@@ -174,18 +224,47 @@ class UpsHatECoordinator(DataUpdateCoordinator):
                 "fast_charging": self._is_fast_charging,
             }
 
-            _LOGGER.debug(f"UPS_HAT_E DATA 2: {self.data}")
+            # Dormant debug statement for data inspection
+            # _LOGGER.debug(f"UPS_HAT_E DATA 2: {self.data}")
             return self.data
+
         except Exception as e:
             raise UpdateFailed(f"Error updating data: {e}")
 
-    def _writeByte(self, register, data):
-        temp = [0]
-        temp[0] = data & 0xFF
-        self._bus.write_i2c_block_data(self._addr, register, temp)
+    async def async_read_i2c_block_data(self, i2c_addr, register, length):
+        """Read a block of byte data from a given register."""
+        loop = asyncio.get_running_loop()
+        async with self._i2c_lock:
+            result = await loop.run_in_executor(
+                None,
+                self._bus.read_i2c_block_data,
+                i2c_addr,
+                register,
+                length,
+            )
+
+        return result
+
+    async def async_write_byte_data(self, i2c_addr, register, value):
+        """Write a byte to a given register."""
+        loop = asyncio.get_running_loop()
+        async with self._i2c_lock:
+            result = await loop.run_in_executor(
+                None, self._bus.write_byte_data, i2c_addr, register, value
+            )
+
+        return result
+
+    async def _writeByte(self, register, data):
+        """Write a byte to a device register via I2C."""
+        if self._bus is not None:
+            temp = [0]
+            temp[0] = data & 0xFF
+            await self.async_write_byte_data(self._addr, register, temp[0])
 
     async def shutdown(self):
         """Shut down the UPS Hat E device if not plugged in."""
-        # Only allow shutdown if not plugged id
         if not self._is_online:
-            self._writeByte(REG_REBOOT, CONST_SHUTDOWN_CMD)
+            await self._writeByte(REG_REBOOT, CONST_SHUTDOWN_CMD)
+        else:
+            _LOGGER.debug("Skipping shutdown: UPS Hat E is plugged in")
